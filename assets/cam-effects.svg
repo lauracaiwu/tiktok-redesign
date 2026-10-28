@@ -1,0 +1,23 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="41.5" height="41.5" viewBox="0 0 41.5 41.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Effects Illustration">
+<g id="Ellipse 27" filter="url(#filter0_d_0_25)">
+<circle cx="20.75" cy="20.42" r="16.75" fill="#F9DBCC"/>
+</g>
+<ellipse id="Ellipse 28" cx="15.8693" cy="17.5229" rx="1.71374" ry="2.11676" transform="rotate(-13.5948 15.8693 17.5229)" fill="#5C2937"/>
+<path id="Union" d="M26.1525 14.9766C26.417 14.7548 26.4517 14.3606 26.2299 14.0961C26.0081 13.8316 25.6139 13.7969 25.3494 14.0187L22.0565 16.7798C21.9019 16.9094 21.8258 17.0979 21.8335 17.2849C21.8353 17.3562 21.8494 17.4283 21.8771 17.4984C22.0038 17.8195 22.3667 17.9771 22.6878 17.8505C24.0718 17.3046 25.6235 17.0887 27.029 17.3231C27.3695 17.3798 27.6915 17.1498 27.7483 16.8094C27.805 16.4689 27.5751 16.1469 27.2346 16.0901C26.4691 15.9625 25.6782 15.9485 24.8953 16.0307L26.1525 14.9766Z" fill="#5C2937"/>
+<path id="Ellipse 31" d="M30.5761 19.6037C30.9226 23.3725 28.8024 28.0806 23.7137 29.6836C18.5333 30.6934 13.202 27.8312 11.516 24.0658C10.8809 21.9287 13.571 21.9142 20.453 20.8004C27.9432 19.5881 30.5203 18.9969 30.5761 19.6037Z" fill="#B05151"/>
+<path id="Intersect" d="M27.4842 27.5316C26.4819 28.4532 25.2296 29.2061 23.7139 29.6836C21.417 30.1314 19.0903 29.8178 17.0649 29.0019C17.7349 26.6403 19.9071 24.9105 22.4833 24.9105C24.4864 24.9105 26.3858 25.9563 27.4842 27.5316Z" fill="#D76069"/>
+<path id="Intersect_2" d="M14.1575 23.2052C14.1672 23.2439 14.1975 23.2729 14.2369 23.2789C17.1814 23.7324 23.3409 22.9895 27.3563 21.148C27.3917 21.1318 27.4138 21.0966 27.4138 21.0577V19.6527C26.6139 19.7776 25.6423 19.9402 24.4772 20.1353C23.3303 20.3272 21.9958 20.5506 20.4528 20.8003C19.4212 20.9673 18.4838 21.1095 17.6377 21.2379C16.0524 21.4785 14.7875 21.6705 13.8237 21.8852L14.1575 23.2052Z" fill="white"/>
+</g>
+<defs>
+<filter id="filter0_d_0_25" x="0" y="8.9407e-08" width="41.5" height="41.5" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="0.33"/>
+<feGaussianBlur stdDeviation="2"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_25"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_25" result="shape"/>
+</filter>
+</defs>
+</svg>

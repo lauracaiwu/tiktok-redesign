@@ -1,0 +1,1799 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>TikTok Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&family=Source+Serif+4:ital,opsz,wght@1,8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Figma tokens */
+:root{
+  --btn:#EA4359; --pink:#E6436D; --blue:#65D2E9; --dark:#161722;
+  --grey:#86878B; --grey2:#8A8B8F; --line:#E3E3E4; --line2:#D0D1D3;
+  --sheet:#F5F5F4; --field:#F1F1F2; --label:#4E4F57;
+  --tab:83px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:#dcdde2;font-family:Figtree,"Proxima Nova",-apple-system,"Helvetica Neue",Arial,sans-serif;color:var(--dark);display:flex;align-items:center;justify-content:center;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,textarea{font:inherit;color:inherit}
+img{display:block;-webkit-user-drag:none;user-select:none}
+.phone{width:414px;height:896px;position:relative;overflow:hidden;overflow:clip;background:#000;border-radius:54px;box-shadow:0 0 0 10px #111,0 0 0 12px #3a3a3a,0 40px 90px rgba(0,0,0,.35);transform-origin:center;flex:none}
+@media (max-width:500px){
+  body{background:#000}
+  .phone{width:100vw;height:100dvh;border-radius:0;box-shadow:none;transform:none!important}
+  .statusbar .icons,.statusbar .time{visibility:hidden}
+}
+.hidden{display:none!important}
+
+/* status bar + home indicator (Figma "Bars") */
+.statusbar{position:absolute;top:0;left:0;right:0;height:44px;z-index:90;pointer-events:none}
+.statusbar .time{position:absolute;left:23px;top:13px;width:60px;text-align:center;font:600 15px/18px -apple-system,"SF Pro Text",sans-serif;letter-spacing:-.3px;color:#fff}
+.statusbar .icons{position:absolute;right:14.5px;top:16px;display:flex;align-items:center;gap:5.5px}
+.statusbar .dk{display:none}
+.phone.light .statusbar .time{color:#171717}
+.phone.light .statusbar .lt{display:none}
+.phone.light .statusbar .dk{display:block}
+.homeind{position:absolute;left:50%;bottom:10px;width:134px;height:5px;margin-left:-67px;border-radius:100px;background:#e9e9e9;z-index:95;pointer-events:none}
+.phone.light .homeind{background:#060606}
+
+/* views */
+.view{position:absolute;left:0;right:0;top:0;bottom:var(--tab);display:none;background:#fff;overflow:hidden}
+.view.on{display:block}
+#v-home{background:#000}
+
+/* tab bar */
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:var(--tab);z-index:30;display:flex;align-items:flex-start;background:#000;box-shadow:0 -.33px 0 #262626}
+.tabbar.light{background:#fff;box-shadow:0 -.33px 0 var(--line2)}
+.tab{flex:1;height:50px;display:flex;flex-direction:column;align-items:center;padding-top:7px;gap:4.5px;font-size:10px;letter-spacing:.15px;color:#fff;opacity:.8;position:relative}
+.tab.on{opacity:1;font-weight:600}
+.tabbar.light .tab{color:var(--grey2)}
+.tabbar.light .tab.on{color:var(--dark)}
+.tab .ic{height:21px;display:flex;align-items:center}
+.tab .ic img{display:none}
+.tabbar:not(.light) .tab:not(.on) .ic .d-off,.tabbar:not(.light) .tab.on .ic .d-on,
+.tabbar.light .tab:not(.on) .ic .l-off,.tabbar.light .tab.on .ic .l-on{display:block}
+.tab.create{padding-top:8.5px;opacity:1}
+.tab.create img{display:block}
+.badge{position:absolute;top:3px;left:calc(50% + 6px);min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:var(--btn);color:#fff;font:700 11px/17px Figtree,sans-serif;text-align:center;opacity:1}
+
+/* ========== HOME FEED ========== */
+.feed{position:absolute;inset:0;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;overscroll-behavior:contain}
+.feed::-webkit-scrollbar{display:none}
+.video{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden;background:#111}
+.video .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:kb 14s ease-in-out infinite alternate;transform-origin:60% 40%}
+@keyframes kb{from{transform:scale(1.02)}to{transform:scale(1.14) translate(-1.5%,1%)}}
+.video:not(.current) .bg,.video.paused .bg{animation-play-state:paused}
+.video .shade{position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.25),transparent 18%,transparent 62%,rgba(0,0,0,.45));pointer-events:none}
+.video .tapzone{position:absolute;inset:0;z-index:1}
+.video .quote{position:absolute;left:28px;right:72px;top:42%;transform:translateY(-50%);z-index:2;pointer-events:none;color:#fff;text-align:center;white-space:pre-line;font:italic 600 26px/1.3 "Source Serif 4",Georgia,serif;text-shadow:0 2px 14px rgba(0,0,0,.6);animation:qin 1s ease-out both}
+.video:not(.current) .quote{animation:none;opacity:0}
+@keyframes qin{from{opacity:0;transform:translateY(calc(-50% + 12px))}}
+.video .pausei{position:absolute;left:50%;top:45%;width:64px;height:64px;margin:-32px;opacity:0;transition:opacity .15s;pointer-events:none;z-index:2;filter:drop-shadow(0 2px 6px rgba(0,0,0,.3))}
+.video.paused .pausei{opacity:.75}
+.rail{position:absolute;right:0;bottom:0;width:60px;height:400px;z-index:3}
+.rail>*{position:absolute;left:50%;transform:translateX(-50%)}
+.rail .av{bottom:333px;width:49px;height:49px;border-radius:50%;border:1px solid #fff;overflow:hidden}
+.rail .av img,.rail .av .ga{width:100%;height:100%;object-fit:cover}
+.rail .follow{bottom:321.5px;width:21px;height:21px;transition:transform .25s}
+.rail .follow img{width:21px;height:21px}
+.rail .follow.done{transform:translateX(-50%) scale(0)}
+.rail .act{display:flex;flex-direction:column;align-items:center;font-weight:600;font-size:13px;color:#fff;opacity:.9;text-shadow:1px 1px 0 rgba(0,0,0,.3);white-space:nowrap}
+.rail .act .ico{position:relative}
+.rail .like{bottom:245px;gap:3px}
+.rail .like .ico{width:35.5px;height:32.36px}
+.rail .like .ico img{position:absolute;width:43.5px;height:40.36px;left:-4px;top:-3.67px}
+.rail .like .on{display:none}
+.rail .like.liked .on{display:block;animation:pop .35s}
+.rail .like.liked .off{display:none}
+.rail .like.liked{opacity:1}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+.rail .cmt{bottom:168px;gap:5px;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.rail .cmt .ico{width:35px;height:33.23px}
+.rail .cmt .ico img{position:absolute;width:43px;height:41.23px;left:-4px;top:-3.67px}
+.rail .shr{bottom:91px;gap:8px}
+.rail .shr .ico{width:34.08px;height:26.84px}
+.rail .shr .ico img{position:absolute;width:42.08px;height:34.84px;left:-4px;top:-3.67px}
+.rail .disc{bottom:12px;width:49px;height:49px;animation:spin 5s linear infinite}
+.rail .disc>img{width:49px;height:49px}
+.rail .disc .dc{position:absolute;left:18.25px;top:18.25px;width:12.5px;height:12.5px;border-radius:50%;overflow:hidden}
+.rail .disc .dc img,.rail .disc .dc .ga{width:100%;height:100%;object-fit:cover}
+@keyframes spin{to{transform:translateX(-50%) rotate(360deg)}}
+.video:not(.current) .disc,.video.paused .disc{animation-play-state:paused}
+.tones{position:absolute;right:43.8px;bottom:3.7px;width:56.55px;height:67.53px;z-index:2;pointer-events:none;animation:tones 3s ease-in-out infinite}
+@keyframes tones{0%,100%{opacity:.6;transform:translateY(2px)}50%{opacity:1;transform:translateY(-3px)}}
+.meta{position:absolute;left:12px;width:332px;bottom:41px;color:#fff;z-index:3;pointer-events:none}
+.meta .who{font-weight:600;font-size:17px;margin-bottom:8px;pointer-events:auto;display:inline-block}
+.meta .who span{font-weight:400;opacity:.9;font-size:15px}
+.meta .cap{font-size:15px;line-height:19.5px;color:rgba(255,255,255,.9)}
+.meta .cap b{font-weight:600;color:#fff}
+.music{position:absolute;left:13px;bottom:10px;height:20px;display:flex;align-items:center;gap:8px;z-index:3;color:#fff}
+.music img{width:13px;height:12px}
+.music .mq{width:185px;overflow:hidden;white-space:nowrap;font-size:15px;line-height:19.5px;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 5%,#000 95%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 5%,#000 95%,transparent 100%)}
+.music .mq span{display:inline-block;padding-left:8px;animation:mq 9s linear infinite}
+.video:not(.current) .music .mq span{animation-play-state:paused}
+@keyframes mq{to{transform:translateX(-50%)}}
+.prog{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(255,255,255,.18);z-index:3}
+.prog i{display:block;height:100%;width:0;background:rgba(255,255,255,.75)}
+.video.current .prog i{animation:prog var(--dur,12s) linear infinite}
+.video.paused .prog i{animation-play-state:paused}
+@keyframes prog{to{width:100%}}
+.burst{position:absolute;width:90px;height:84px;margin:-42px 0 0 -45px;z-index:4;pointer-events:none;animation:burst .9s ease-out forwards}
+@keyframes burst{0%{transform:scale(.4) rotate(var(--r));opacity:0}15%{transform:scale(1.15) rotate(var(--r));opacity:1}30%{transform:scale(1) rotate(var(--r))}100%{transform:scale(1.5) translateY(-60px) rotate(var(--r));opacity:0}}
+.feedhead{position:absolute;top:44px;left:0;right:0;height:44px;z-index:5;display:flex;justify-content:center;align-items:center;gap:0;padding-right:0}
+.feedhead button{font-weight:600;color:rgba(255,255,255,.6);font-size:16px;padding:0 13px;transition:color .2s,font-size .2s;text-shadow:0 1px 2px rgba(0,0,0,.2)}
+.feedhead button.on{color:#fff;font-size:18px;letter-spacing:.1px}
+.feedhead i{width:1px;height:11px;background:rgba(255,255,255,.3)}
+.empty-follow{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:0 24px;background:radial-gradient(circle at 50% 30%,#2a2b36,#000 70%)}
+.empty-follow h3{font-size:18px;margin-bottom:6px}
+.empty-follow p{font-size:14px;color:rgba(255,255,255,.6);margin-bottom:22px}
+.sugg-row{display:flex;gap:10px;overflow-x:auto;width:100%;padding:0 4px 8px;scrollbar-width:none}
+.sugg{flex:none;width:150px;background:rgba(255,255,255,.08);border-radius:8px;padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.sugg .avw{width:64px;height:64px;border-radius:50%;overflow:hidden}
+.sugg .nm{font-weight:600;font-size:14px}
+.sugg .rs{font-size:11px;color:rgba(255,255,255,.55);min-height:28px}
+
+/* generic avatar fallback */
+.ga{display:grid;place-items:center;color:#fff;font-weight:700;background:linear-gradient(135deg,hsl(var(--h) 75% 62%),hsl(calc(var(--h) + 50) 70% 45%))}
+
+/* ========== SHEETS ========== */
+.backdrop{position:absolute;inset:0;z-index:60;background:rgba(0,0,0,0);pointer-events:none;transition:background .25s}
+.backdrop.on{background:rgba(0,0,0,.08);pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:61;transform:translateY(102%);transition:transform .32s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column}
+.sheet.open{transform:none}
+.sheet .body{background:var(--sheet);border-radius:8px 8px 0 0;position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
+.sheet .foot{flex:none;height:var(--tab);background:#fff;box-shadow:0 -.33px 0 var(--line2);position:relative}
+.sh-title{flex:none;height:44px;text-align:center;font-weight:600;font-size:13px;line-height:44px;position:relative;touch-action:none}
+.sh-x{position:absolute;right:10px;top:7px;width:30px;height:30px;display:grid;place-items:center}
+.sh-x img{width:9.5px;height:9.5px}
+
+/* comments (Figma 2:772) */
+#comments{height:654px;max-height:calc(100% - 100px)}
+.clist{flex:1;overflow-y:auto;overscroll-behavior:contain;padding-bottom:6px}
+.c{position:relative;display:flex;padding:6px 16px 8px;min-height:60px;user-select:none;-webkit-user-select:none;transition:background .15s}
+.c.pressing{background:#ebebea}
+.c .cav{flex:none;width:32px;height:32px;border-radius:50%;overflow:hidden;margin-right:12px}
+.c .cav img,.c .cav .ga{width:100%;height:100%;object-fit:cover;font-size:13px}
+.c .cb{flex:1;min-width:0;padding-right:8px}
+.c .cu{font-weight:600;font-size:13px;color:var(--grey);display:flex;align-items:center;gap:5px}
+.c .cu img{width:10px;height:10px}
+.c .cu .tag{font-size:11px;color:var(--btn);font-weight:600}
+.c .ct{font-size:15px;margin-top:5px;line-height:1.3;word-wrap:break-word}
+.c .ct time{font-size:13px;color:var(--grey);margin-left:4px}
+.c .reacts{display:inline-flex;margin-top:6px;background:#fff;border-radius:11px;padding:1px 7px;font-size:13px;gap:2px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.c .rep{display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:13px;color:var(--grey);margin-top:10px}
+.c .rep img{width:9px;height:4.5px;transition:transform .2s}
+.c .rep.open img{transform:rotate(180deg)}
+.c .clk{flex:none;width:36px;display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:9px;font-size:13px;color:var(--grey)}
+.c .clk .hs{width:15.5px;height:13.5px}
+.c .clk .hr{display:none;width:16px;height:15px}
+.c .clk.on .hs{display:none}
+.c .clk.on .hr{display:block;animation:pop .3s}
+.c.reply{padding-left:60px;min-height:48px}
+.c.reply .cav{width:24px;height:24px}
+.c.mine{animation:fadein .4s}
+@keyframes fadein{from{background:#fff3c4}}
+.reactpop{position:absolute;z-index:5;left:50%;transform:translate(-50%,8px) scale(.85);opacity:0;background:#fff;border-radius:36px;padding:10px 16px;display:flex;gap:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);transition:transform .18s,opacity .18s;pointer-events:none}
+.reactpop.on{transform:translate(-50%,0) scale(1);opacity:1;pointer-events:auto}
+.reactpop button{font-size:32px;line-height:1;transition:transform .12s}
+.reactpop button:active{transform:scale(1.25)}
+.reactpop .lbl{position:absolute;left:0;right:0;top:-20px;text-align:center;font-size:11px;font-weight:600;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+
+/* comment composer: most-used emoji + voice */
+.emo-row{flex:none;display:flex;align-items:center;gap:4px;padding:6px 10px 6px 16px;background:#fff;border-top:.33px solid var(--line2);overflow-x:auto;scrollbar-width:none}
+.emo-row button{flex:none;font-size:24px;width:40px;height:36px;border-radius:8px;transition:background .15s,transform .1s}
+.emo-row button:active{background:var(--field);transform:scale(1.15)}
+.composer{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;padding:0 10px 0 18px;gap:12px}
+.composer input{flex:1;min-width:0;border:0;outline:0;background:none;font-size:15px;height:40px}
+.composer input::placeholder{color:var(--grey)}
+.composer .ib{width:30px;height:30px;display:grid;place-items:center;flex:none}
+.composer .ib img{width:22px;height:22px}
+.composer .mic{position:relative;touch-action:none;transition:background .15s}
+.composer .mic .sq{display:none;width:10px;height:10px;border-radius:2px;background:#fff}
+.composer .vpill,.composer .vx{display:none}
+.composer.recording .vpill{display:flex}
+.composer.recording .at,.composer.recording .emo,.composer.recording .post{display:none!important}
+.composer.recording input{color:var(--grey)}
+.composer.locked .vx{display:grid;background:var(--field);border-radius:50%;font-size:18px;color:var(--label)}
+.composer.locked .mic{background:#000;border-radius:50%}
+.composer.locked .mic .mi{display:none}
+.composer.locked .mic .sq{display:block}
+/* small voice note (shared) */
+.vpill{align-items:center;gap:6px;flex:none;background:var(--sheet);border-radius:15px;height:30px;padding:0 10px}
+.vdot{width:7px;height:7px;border-radius:50%;background:var(--btn);flex:none;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.3}}
+.vwave{display:flex;align-items:center;gap:2.5px;height:16px}
+.vwave i{width:3.5px;height:4px;border-radius:2px;background:#D0D1D3;transition:height .09s,background .09s}
+.vwave i.hot{background:var(--btn)}
+.vtime{font-size:12px;font-weight:600;color:var(--label);font-variant-numeric:tabular-nums;flex:none}
+.vnote-rail{position:absolute;right:64px;top:600px;z-index:9;background:#fff;color:var(--dark);border-radius:22px;padding:9px 12px 8px;box-shadow:0 6px 24px rgba(0,0,0,.22);min-width:170px;max-width:260px;transform:translate(8px,-50%) scale(.9);transform-origin:right center;opacity:0;pointer-events:none;transition:transform .18s,opacity .18s}
+.vnote-rail.on{opacity:1;transform:translate(0,-50%) scale(1);pointer-events:auto}
+.vnote-rail .vr-row{display:flex;align-items:center;gap:8px}
+.vnote-rail .vr-tx{font-size:12px;color:var(--grey);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:236px}
+.vnote-rail .vhint{font-size:10px;font-weight:600;color:var(--grey);margin-top:3px}
+.vnote-rail.locked .vhint{display:none}
+.vnote-rail .vbtn{display:none;width:26px;height:26px;border-radius:50%;place-items:center;flex:none}
+.vnote-rail.locked .vbtn{display:grid}
+.vnote-rail .vx{background:var(--field);font-size:16px;color:var(--label);margin-left:auto}
+.vnote-rail .vstop{background:#000}
+.vnote-rail .vstop i{width:9px;height:9px;border-radius:2px;background:#fff}
+.composer .mic svg{width:22px;height:22px}
+.composer .mic.rec{background:var(--btn);border-radius:50%}
+.composer .mic.rec svg{stroke:#fff}
+.composer .post{color:var(--btn);font-weight:700;font-size:15px;flex:none;display:none}
+.composer.has .post{display:block}
+.composer.has .at,.composer.has .emo{display:none}
+@keyframes blink{50%{opacity:.3}}
+
+/* share (Figma 2:659) */
+#share .body{height:226px;flex:none}
+#share .sh-title{height:auto;line-height:normal;padding-top:10px;height:36px}
+.srow{display:flex;gap:22px;overflow-x:auto;padding:5px 0 0 21px;scrollbar-width:none;height:86px}
+.srow::-webkit-scrollbar{display:none}
+.si{flex:none;width:47px;display:flex;flex-direction:column;align-items:center;font-size:11px;color:var(--label);text-align:center;line-height:1.15;gap:9px;white-space:nowrap}
+.si .ic{width:47px;height:47px;position:relative;display:grid;place-items:center}
+.si .ic>img:first-child{position:absolute;inset:0;width:100%;height:100%}
+.si .ic>img+img{position:relative}
+.si:last-child{margin-right:16px}
+.ssep{height:.33px;background:var(--line2);margin:0 16px 13px}
+.sfoot{width:100%;height:52px;font-size:15px}
+.si.on .ic>img:first-child{filter:brightness(.85)}
+
+/* ========== LIGHT PAGE PRIMITIVES ========== */
+.topbar{position:relative;height:88px;background:#fff;box-shadow:0 .33px 0 var(--line2);flex:none;z-index:2}
+.topbar .ttl{position:absolute;left:0;right:0;top:55px;text-align:center;font-weight:700;font-size:17px;pointer-events:none}
+.topbar .l,.topbar .r{position:absolute;top:47px;height:38px;min-width:38px;display:grid;place-items:center}
+.topbar .l{left:8px}
+.topbar .r{right:8px}
+.page{position:absolute;inset:0;z-index:40;background:#fff;transform:translateX(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;overflow:hidden}
+.page.open{transform:none}
+.page.up{transform:translateY(100%)}
+.page.up.open{transform:none}
+.page.dark{background:#000;color:#fff}
+.scroll{flex:1;overflow-y:auto;overscroll-behavior:contain}
+.row{display:flex;align-items:center;height:52px;padding:0 16px;width:100%;text-align:left;font-size:15px;gap:0;position:relative}
+.row:active{background:#f7f7f7}
+.row .ri{width:32px;display:flex;justify-content:flex-start;padding-left:2px}
+.row .rv{margin-left:auto;color:var(--grey);margin-right:10px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .chev{width:5.79px;height:10.5px;flex:none;margin-left:auto}
+.row .rv+.chev{margin-left:0}
+.sec{font-weight:600;font-size:13px;color:var(--grey);padding:20px 16px 4px}
+.sep{height:.66px;background:var(--line);margin:8px 16px 0}
+.btn-red{background:var(--btn);color:#fff;font-weight:700;border-radius:2px;height:36px;padding:0 18px;font-size:14px}
+.btn-red.done{background:#fff;color:var(--dark);border:1px solid var(--line)}
+.toast{position:absolute;left:50%;top:46%;z-index:200;transform:translate(-50%,-50%);background:rgba(22,23,34,.88);color:#fff;border-radius:6px;padding:11px 18px;font-size:15px;font-weight:600;max-width:300px;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+
+/* ========== DISCOVER (redesign) ========== */
+#v-discover{display:none;flex-direction:column}
+#v-discover.on{display:flex}
+.dhead{flex:none;padding:52px 16px 0;background:#fff;display:flex;align-items:center;gap:12px}
+.search{flex:1;height:36px;border-radius:4px;background:var(--field);display:flex;align-items:center;padding:0 12px;gap:18px}
+.search img{width:14.3px;height:14.8px}
+.search input{border:0;outline:0;background:none;flex:1;font-size:15px;min-width:0}
+.search input::placeholder{color:var(--grey)}
+.dhead{padding-bottom:10px;box-shadow:0 .33px 0 var(--line2)}
+.dsec{padding:18px 0 4px}
+.dsec h4{font-size:17px;font-weight:700;padding:0 16px;display:flex;align-items:baseline;gap:8px}
+.dsec h4 small{font-size:12px;font-weight:600;color:var(--grey);margin-left:auto}
+.dsec .why{font-size:12px;color:var(--grey);padding:3px 16px 0}
+/* trending (global) */
+.trend{display:flex;align-items:center;gap:12px;padding:9px 16px;width:100%;text-align:left}
+.trend:active{background:#f7f7f7}
+.trend .rk{width:20px;flex:none;font-weight:800;font-size:19px;color:var(--grey);text-align:center}
+.trend:nth-of-type(-n+3) .rk{color:var(--btn)}
+.trend .tt{flex:1;min-width:0}
+.trend .tt b{display:block;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trend .tt span{font-size:12px;color:var(--grey)}
+.trend .tt .up{color:#1a9e5c;font-weight:700}
+.trend img{width:42px;height:56px;object-fit:cover;border-radius:4px;flex:none}
+/* hyper-niche searches from watch history */
+.nsearch{display:flex;align-items:center;gap:12px;padding:10px 16px;width:100%;text-align:left;animation:fadein .5s}
+.nsearch:active{background:#f7f7f7}
+.nsearch .sic{width:32px;height:32px;border-radius:50%;background:var(--field);display:grid;place-items:center;flex:none}
+.nsearch .sic img{width:13px;height:13.4px}
+.nsearch .q{flex:1;min-width:0;font-size:15px;line-height:1.25}
+.nsearch .arr{flex:none;width:28px;height:28px;display:grid;place-items:center}
+.watched{display:flex;align-items:center;gap:8px;margin:10px 16px 2px;padding:8px;border-radius:8px;background:var(--sheet);font-size:12px;color:var(--label)}
+.watched img{width:30px;height:40px;object-fit:cover;border-radius:3px}
+.watched b{font-weight:700}
+/* creators: horizontal cards, two rows, swipe sideways */
+.hcards{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);grid-auto-columns:296px;gap:10px;overflow-x:auto;padding:12px 16px 4px;scroll-snap-type:x mandatory;scroll-padding:0 16px;scrollbar-width:none}
+.hcards::-webkit-scrollbar{display:none}
+.hcard{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px 12px 12px 12px;position:relative;scroll-snap-align:start;transition:opacity .3s,transform .3s;background:#fff}
+.hcard.gone{opacity:0;transform:scale(.92)}
+.hcard .avw{width:56px;height:56px;border-radius:50%;overflow:hidden;flex:none}
+.hcard .avw img,.hcard .avw .ga{width:100%;height:100%;object-fit:cover;font-size:22px}
+.hcard .info{flex:1;min-width:0}
+.hcard .nm{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hcard .hd{font-size:12px;color:var(--grey);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hcard .rs{font-size:12px;color:var(--label);margin-top:3px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hcard .rs b{font-weight:700}
+.hcard .btn-red{height:32px;padding:0 14px;font-size:13px;flex:none}
+.hcard .x{position:absolute;right:4px;top:2px;width:22px;height:22px;display:grid;place-items:center;color:var(--grey);font-size:15px}
+.hscroll{display:flex;gap:10px;overflow-x:auto;padding:12px 16px 4px;scrollbar-width:none;scroll-snap-type:x proximity}
+.hscroll::-webkit-scrollbar{display:none}
+.htag{display:flex;align-items:center;padding:12px 16px 8px;gap:12px}
+.htag .hi{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-weight:700;font-size:18px;flex:none}
+.htag .hn{font-weight:600;font-size:15px}
+.htag .hr{font-size:12px;color:var(--grey)}
+.htag .hc{margin-left:auto;background:var(--field);border-radius:2px;padding:3px 6px;font-size:12px;font-weight:700}
+.strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;padding-bottom:6px}
+.strip::-webkit-scrollbar{display:none}
+.strip button{flex:none;width:112px;height:150px;position:relative;overflow:hidden}
+.strip img{width:100%;height:100%;object-fit:cover}
+.mosaic{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:132px;gap:2px;margin-top:12px}
+.mosaic button{position:relative;overflow:hidden}
+.mosaic button.big{grid-row:span 2}
+.mosaic img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.mosaic button:active img{transform:scale(1.04)}
+.tlbl{position:absolute;left:6px;bottom:6px;right:6px;color:#fff;font-size:11px;font-weight:600;text-align:left;text-shadow:0 1px 3px rgba(0,0,0,.6);display:flex;align-items:center;gap:4px}
+.tlbl .mini{width:16px;height:16px;border-radius:50%;overflow:hidden;flex:none}
+.tlbl .mini img,.tlbl .mini .ga{width:100%;height:100%;font-size:8px}
+.why-chip{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.45);color:#fff;font-size:10px;font-weight:600;border-radius:3px;padding:2px 5px;backdrop-filter:blur(4px)}
+.plrow{display:flex;align-items:center;gap:14px;width:100%;padding:8px 16px;text-align:left}
+.plrow:active{background:#f7f7f7}
+.plrow>img{width:77px;height:77px;border-radius:8px;object-fit:cover;flex:none}
+.plrow .pli{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.plrow b{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plrow .plu{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--label)}
+.plrow .plu .mini{width:16px;height:16px;border-radius:50%;overflow:hidden;flex:none}
+.plrow .plu .mini img,.plrow .plu .mini .ga{width:100%;height:100%;object-fit:cover;font-size:8px}
+.plrow .pln{font-size:14px;color:var(--grey)}
+.pcard{flex:none;width:156px;scroll-snap-align:start;text-align:left}
+.pcard .cv{width:156px;height:156px;border-radius:8px;overflow:hidden;position:relative}
+.pcard .cv img{width:100%;height:100%;object-fit:cover}
+.pcard .cv .n{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:700;border-radius:3px;padding:2px 6px}
+.pcard .pt{font-weight:700;font-size:14px;margin-top:7px}
+.pcard .pb{font-size:12px;color:var(--grey);display:flex;align-items:center;gap:5px;margin-top:2px}
+.pcard .pb .mini{width:16px;height:16px;border-radius:50%;overflow:hidden}
+.pcard .pb .mini img,.pcard .pb .mini .ga{width:100%;height:100%;font-size:8px}
+.dempty{padding:40px 24px;text-align:center;color:var(--grey);font-size:14px}
+
+/* creator profile (Figma 10-1069) */
+.crhead{position:relative;padding:2px 16px 0;min-height:132px}
+.crname{font-weight:800;font-size:30px;line-height:1.1;max-width:236px;overflow-wrap:anywhere}
+.crhandle{font-size:14px;font-weight:600;color:var(--grey);margin-top:3px}
+.crstats{display:flex;gap:26px;margin-top:14px}
+.crstats b{display:block;font-weight:700;font-size:18px}
+.crstats span{display:block;font-size:14px;color:var(--grey);margin-top:1px}
+.crav{position:absolute;right:16px;top:-6px;width:112px;height:112px;border-radius:50%;overflow:hidden;border:1px solid var(--line)}
+.crav img,.crav .ga{width:100%;height:100%;object-fit:cover;font-size:40px}
+.crbtns{display:flex;gap:8px;padding:16px 16px 0}
+.crbtns .fol,.crbtns .msg{flex:1;height:44px;border-radius:22px;font-weight:600;font-size:16px}
+.crbtns .fol{background:var(--btn);color:#fff}
+.crbtns .fol.done,.crbtns .msg{background:var(--field);color:var(--dark)}
+.crbtns .add{width:44px;height:44px;border-radius:50%;background:var(--field);display:grid;place-items:center;flex:none}
+.crbio{padding:14px 16px 0;font-size:14px;line-height:1.45}
+.crbio b{font-weight:700}
+.crtabs{display:flex;margin-top:14px;border-bottom:.33px solid var(--line2)}
+.crtabs button{flex:1;height:44px;display:grid;place-items:center;position:relative;color:#A2A3A8}
+.crtabs button.on{color:var(--dark)}
+.crtabs button.on::after{content:"";position:absolute;bottom:0;left:50%;width:56px;margin-left:-28px;height:2px;background:var(--dark)}
+.plchips{display:flex;gap:4px;padding:8px 10px;overflow-x:auto;scrollbar-width:none}
+.plchips::-webkit-scrollbar{display:none}
+.plchips button{flex:none;display:flex;align-items:center;gap:6px;height:32px;padding:0 8px;border-radius:6px;font-weight:600;font-size:15px;color:var(--dark)}
+.plchips button.on{background:var(--field)}
+.plchips svg{width:17px;height:17px;flex:none}
+.crgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.crgrid button{position:relative;aspect-ratio:3/4;overflow:hidden;background:#222}
+.crgrid img{width:100%;height:100%;object-fit:cover}
+.crgrid .tq{position:absolute;left:8px;right:8px;top:16%;text-align:center;color:#fff;font-size:22px;line-height:1.05;font-weight:400;text-shadow:0 1px 8px rgba(0,0,0,.45);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.crgrid .vw{position:absolute;left:6px;bottom:5px;color:#fff;font-weight:600;font-size:13px;display:flex;align-items:center;gap:3px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.crgrid button.jw::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 3px var(--btn)}
+.crgrid button.pulse{animation:pulse 1s 2}
+@keyframes pulse{50%{filter:brightness(1.25)}}
+.justw{position:absolute;right:16px;bottom:44px;z-index:5;background:#fff;border-radius:22px;height:42px;padding:0 16px;font-weight:700;font-size:16px;box-shadow:0 4px 18px rgba(0,0,0,.18);display:flex;align-items:center;gap:6px}
+/* viewer (single video from Discover) */
+#viewer.haspl #viewerFeed{bottom:48px}
+.plbar{position:absolute;left:0;right:0;bottom:0;height:48px;background:#1c1c1e;color:#fff;display:flex;align-items:center;gap:8px;padding:0 16px 0 14px;font-size:14px;z-index:6;text-align:left}
+.plbar b{font-weight:700}
+.plbar .n{color:rgba(255,255,255,.55)}
+.plbar .chev{margin-left:auto}
+.plback{position:absolute;inset:0;z-index:7;background:rgba(0,0,0,0);pointer-events:none;transition:background .25s}
+.plback.on{background:rgba(0,0,0,.35);pointer-events:auto}
+.plsheet{position:absolute;left:0;right:0;bottom:0;height:74%;background:#fff;color:var(--dark);border-radius:10px 10px 0 0;z-index:8;transform:translateY(102%);transition:transform .32s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column}
+.plsheet.open{transform:none}
+.plhead{flex:none;height:64px;position:relative;display:flex;align-items:center;padding:0 6px;border-bottom:.33px solid var(--line2)}
+.plhead button{width:42px;height:42px;display:grid;place-items:center;flex:none}
+.plhead .plx{margin-right:auto}
+.plhead .plt{position:absolute;left:90px;right:90px;text-align:center;pointer-events:none}
+.plhead .plt b{display:block;font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plhead .plt span{font-size:13px;font-weight:600;color:var(--grey)}
+.pllist{flex:1;overflow-y:auto;overscroll-behavior:contain;padding-bottom:30px}
+.plpost{display:flex;gap:14px;align-items:flex-start;width:100%;padding:10px 16px;text-align:left}
+.plpost.cur{background:var(--field)}
+.plpost img{width:77px;height:103px;border-radius:6px;object-fit:cover;flex:none}
+.plpost .pp{flex:1;min-width:0;padding-top:10px}
+.plpost .cap{font-size:16px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.plpost .cap b{font-weight:700}
+.plpost .cap i{font-style:normal;color:#C4C4C6;margin:0 5px}
+.plpost .m2{font-size:14px;color:var(--grey);margin-top:6px}
+.plpost .lw{color:#3AABD2;margin-left:8px}
+#viewer{background:#000}
+#viewer .video{height:100%}
+#viewer .vclose{position:absolute;left:12px;top:50px;z-index:10;width:36px;height:36px;display:grid;place-items:center}
+#viewer .vctx{position:absolute;top:58px;left:0;right:0;text-align:center;color:#fff;font-size:13px;font-weight:600;z-index:9;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+
+/* ========== SOUND (Figma 2:602) ========== */
+#sound .stop{height:265px;flex:none;position:relative;background:#fff;box-shadow:0 .33px 0 var(--line)}
+#sound .cover{position:absolute;left:18px;top:110px;width:120px;height:120px;overflow:hidden}
+#sound .cover img.c{width:100%;height:100%;object-fit:cover}
+#sound .cover .p{position:absolute;left:49.67px;top:47.8px;width:20.1px;height:24.4px}
+#sound .st{position:absolute;left:152px;top:110px;font-weight:600;font-size:20px}
+#sound .sa{position:absolute;left:152px;top:142px;font-size:13px;color:var(--grey)}
+#sound .sv{position:absolute;left:152px;top:162px;font-size:13px;color:var(--grey)}
+#sound .fav{position:absolute;left:152px;top:203px;width:152px;height:28px;border:1px solid var(--line);border-radius:2px;display:flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:14px}
+#sound .fav img{width:10.5px;height:12.9px}
+#sound .fav.on{background:var(--field)}
+.grid3{display:grid;grid-template-columns:137px 137.66px 137px;justify-content:space-between;gap:1.33px 0}
+.grid3>*{height:182px;border:.83px solid #fff;overflow:hidden;position:relative;background:#c4c4c4}
+.grid3 img{width:100%;height:100%;object-fit:cover}
+@media (max-width:500px){.grid3{grid-template-columns:repeat(3,1fr);gap:1.5px}.grid3>*{height:auto;aspect-ratio:137/182}}
+.views{position:absolute;left:6px;bottom:5px;color:#fff;font-size:12px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.5);display:flex;align-items:center;gap:3px}
+.usebtn{position:absolute;left:50%;bottom:44px;margin-left:-89px;width:178px;height:52px;border-radius:26px;background:var(--btn);box-shadow:0 4px 8px rgba(0,0,0,.3);color:#fff;font-weight:600;font-size:16px;letter-spacing:-.25px;display:flex;align-items:center;justify-content:center;gap:8px;z-index:3}
+.usebtn img{width:22.5px;height:14.3px}
+
+/* ========== CAMERA (Figma 2:477) ========== */
+#camera{background:#000;color:#fff}
+.vf{position:absolute;left:0;right:0;top:38px;height:756px;border-radius:12px;overflow:hidden;background:#111}
+@media (max-width:500px){.vf{height:auto;bottom:102px}}
+.vf>img,.vf>video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:filter .3s,transform .4s}
+.vf.flip>img,.vf.flip>video{transform:scaleX(-1)}
+.vf .recbar{position:absolute;left:8px;right:8px;top:12px;height:6px;border-radius:3px;background:rgba(0,0,0,.1);overflow:hidden}
+.vf .recbar i{position:absolute;left:0;top:0;bottom:0;background:var(--btn);width:0}
+.vf .recbar b{position:absolute;top:0;bottom:0;width:2px;background:#fff}
+.cam-x{position:absolute;left:12px;top:32px;width:32px;height:32px;display:grid;place-items:center;z-index:2}
+.cam-x img{width:24.5px;height:24.5px}
+.cam-sound{position:absolute;left:50%;top:38px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px;opacity:.9;max-width:220px;white-space:nowrap;z-index:2}
+.cam-sound img{width:13.5px;height:13.3px;flex:none}
+.cam-sound span{overflow:hidden;text-overflow:ellipsis}
+.tools{position:absolute;right:6px;top:37px;width:44px;display:flex;flex-direction:column;align-items:center;gap:14px;z-index:2;transition:opacity .2s}
+.tool{display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:700;font-size:10px;opacity:.9;position:relative}
+.tool .ti{height:24px;display:flex;align-items:center}
+.tool.on .ti{filter:drop-shadow(0 0 6px var(--blue))}
+.tool.on{color:var(--blue);opacity:1}
+.speedrow{position:absolute;left:50%;bottom:150px;transform:translateX(-50%);display:flex;background:rgba(0,0,0,.35);border-radius:6px;overflow:hidden;z-index:2}
+.speedrow button{width:56px;height:34px;font-size:13px;font-weight:700;color:rgba(255,255,255,.8)}
+.speedrow button.on{background:#fff;color:var(--dark);border-radius:6px}
+.cam-btns{position:absolute;left:0;right:0;bottom:13px;height:80px;z-index:2}
+.recbtn{position:absolute;left:50%;top:0;width:80px;height:80px;margin-left:-40px}
+.recbtn img{width:80px;height:80px;transition:opacity .2s}
+.recbtn .sq{position:absolute;left:25px;top:25px;width:30px;height:30px;border-radius:6px;background:var(--btn);opacity:0;transform:scale(2);transition:.2s}
+.recbtn.rec img{opacity:.5}
+.recbtn.rec .sq{opacity:1;transform:none}
+.effects{position:absolute;left:62.5px;top:25.5px;width:41.5px;display:flex;flex-direction:column;align-items:center;gap:5px;font-weight:700;font-size:11px;text-shadow:0 .33px 4px rgba(0,0,0,.1)}
+.effects img{width:41.5px;height:41.6px;margin:-3.7px -4px}
+.upload{position:absolute;left:314.5px;top:24px;width:32px;display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:700;font-size:11px}
+.upload .uw{width:32px;height:32px;border:2px solid #fff;border-radius:4px;overflow:hidden;filter:drop-shadow(0 .33px 2px rgba(0,0,0,.2))}
+.upload .uw img{width:28px;height:28px}
+@media (max-width:500px){.effects{left:15%}.upload{left:auto;right:15%}}
+.cam-side{position:absolute;top:20px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:20px;font-weight:800}
+.cam-del{left:calc(50% + 72px);background:rgba(255,255,255,.2)}
+.cam-ok{left:calc(50% + 128px);background:var(--btn)}
+.modes{position:absolute;left:0;right:0;bottom:45px;height:30px;display:flex;justify-content:center;gap:0;z-index:3}
+.modes button{font-weight:700;font-size:15px;opacity:.6;padding:0 14px;position:relative}
+.modes button.on{opacity:1}
+.modes button.on::after{content:"";position:absolute;left:50%;top:24px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:#fff}
+.countdown{position:absolute;inset:0;display:grid;place-items:center;font-size:120px;font-weight:800;z-index:4;pointer-events:none;text-shadow:0 4px 20px rgba(0,0,0,.4)}
+.fxlayer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.fxlayer span{position:absolute;top:-40px;font-size:28px;animation:fall linear infinite}
+@keyframes fall{to{transform:translateY(860px) rotate(220deg)}}
+.flashbig{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-size:28px;font-weight:800;text-shadow:0 2px 10px rgba(0,0,0,.4);opacity:0;transition:opacity .3s;pointer-events:none;z-index:3}
+.flashbig.on{opacity:1}
+/* templates (Figma 2:434) */
+.tpl{position:absolute;inset:0;background:linear-gradient(180deg,#232320 4.17%,#2D2C28 10.42%,#18181A 70.07%,#131313 100%);z-index:1}
+.tpl h2{position:absolute;left:0;right:0;top:100.5px;text-align:center;font-weight:700;font-size:24px}
+.tpl .sub{position:absolute;left:0;right:0;top:135px;text-align:center;font-size:15px;opacity:.6;letter-spacing:-.6px}
+.tpl .car{position:absolute;left:0;right:0;top:169px;height:440px;touch-action:pan-y}
+.tpl .card{position:absolute;top:0;left:50%;width:248px;height:440px;margin-left:-124px;border-radius:8px;overflow:hidden;box-shadow:0 4px 4px rgba(0,0,0,.25),0 2.5px 2px rgba(255,255,255,.1);transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .35s;background:radial-gradient(#161617,#242422)}
+.tpl .card img{width:100%;height:100%;object-fit:cover}
+.tpl .card .tn{position:absolute;left:10px;bottom:10px;font-weight:800;font-size:18px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+.tpl .idx{position:absolute;left:0;right:0;top:627.5px;text-align:center;font-weight:700;font-size:12px;opacity:.6}
+.tpl .sel{position:absolute;left:72px;right:72px;top:699px;height:44px;border-radius:22px;background:var(--btn);font-weight:700;font-size:15px}
+@media (max-width:500px){.tpl .sel{top:auto;bottom:153px}.tpl .idx{top:auto;bottom:250px}}
+/* picker */
+#picker .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+#picker .pgrid button{aspect-ratio:3/4;position:relative;overflow:hidden}
+#picker .pgrid img{width:100%;height:100%;object-fit:cover}
+#picker .pgrid .num{position:absolute;right:6px;top:6px;width:24px;height:24px;border-radius:50%;border:1.5px solid #fff;background:rgba(0,0,0,.15);font-size:13px;font-weight:700;color:#fff;display:grid;place-items:center}
+#picker .pgrid .sel .num{background:var(--btn);border-color:var(--btn)}
+#picker .pgrid .sel img{opacity:.8}
+#picker .pnext{flex:none;height:64px;display:flex;align-items:center;padding:0 16px;border-top:.33px solid var(--line2);gap:10px;padding-bottom:10px}
+#picker .pnext span{font-size:13px;color:var(--grey)}
+#picker .pnext .btn-red{margin-left:auto;border-radius:2px;min-width:110px}
+#picker .pnext .btn-red:disabled{opacity:.4}
+
+/* ========== INBOX (Figma 2:380) ========== */
+.caret{width:10px;height:7px;transform:rotate(180deg);display:inline-block;margin-left:8px;vertical-align:3px;transition:transform .2s}
+.caret.up{transform:none}
+.ttlbtn{position:absolute;left:50%;top:47px;transform:translateX(-50%);height:38px;display:flex;align-items:center;font-weight:700;font-size:17px;padding-left:0;white-space:nowrap}
+.empty{position:absolute;left:0;right:0;text-align:center;display:flex;flex-direction:column;align-items:center}
+.empty h5{font-weight:600;font-size:17px;margin-top:25px}
+.empty p{font-size:14px;color:#7C7D83;margin-top:14px}
+.dropdown{position:absolute;left:50%;top:84px;transform:translateX(-50%);width:220px;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.15);z-index:5;padding:6px 0;display:none}
+.dropdown.on{display:block}
+.dropdown button{display:flex;align-items:center;width:100%;height:44px;padding:0 18px;font-size:15px;text-align:left}
+.dropdown button.on{font-weight:700}
+.dropdown button.on::after{content:"✓";margin-left:auto;color:var(--btn)}
+.notif{display:flex;align-items:center;gap:12px;padding:10px 16px;animation:fadein .5s}
+.notif .nav{width:48px;height:48px;border-radius:50%;overflow:hidden;flex:none}
+.notif .nav img,.notif .nav .ga{width:100%;height:100%;object-fit:cover}
+.notif .nt{flex:1;font-size:15px;line-height:1.3}
+.notif .nt b{font-weight:600}
+.notif .nt time{color:var(--grey);font-size:13px;margin-left:4px}
+.notif .nth{width:44px;height:58px;object-fit:cover;flex:none}
+
+/* ========== ME (Figma 2:241) ========== */
+.pro{position:relative;height:318px;background:#fff;box-shadow:0 .33px 0 var(--line2)}
+.pro .pav{position:absolute;left:50%;top:16px;width:96px;height:96px;margin-left:-48px;border-radius:50%;overflow:hidden}
+.pro .pav img{width:100%;height:100%;object-fit:cover}
+.pro .hdl{position:absolute;left:0;right:0;top:123px;text-align:center;font-weight:600;font-size:17px}
+.pro .stats{position:absolute;left:0;right:0;top:159px;display:flex;justify-content:center}
+.pro .stats div{width:92px;text-align:center}
+.pro .stats b{display:block;font-weight:700;font-size:17px}
+.pro .stats span{display:block;font-size:13px;color:var(--grey);margin-top:6px}
+.pro .edit{position:absolute;left:101px;top:216px;width:164px;height:44px;border:1px solid var(--line);border-radius:2px;font-weight:600;font-size:15px}
+.pro .bm{position:absolute;left:269px;top:216px;width:44px;height:44px}
+@media (max-width:500px){.pro .edit{left:calc(50% - 106px)}.pro .bm{left:calc(50% + 62px)}}
+.pro .bio{position:absolute;left:16px;right:16px;top:279px;text-align:center;font-size:14px;color:var(--grey);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pro .bio.set{color:var(--dark)}
+.ptabs{position:relative;height:40px}
+.ptabs>img{width:414px;height:40px}
+@media (max-width:500px){.ptabs>img{width:100%}}
+.ptabs button{position:absolute;top:0;width:50%;height:40px}
+.ptabs .pl{left:0}
+.ptabs .pr{right:0}
+.ptabs .mask{position:absolute;left:0;bottom:0;width:50%;height:3px;background:#fff;display:none}
+.ptabs .ul{position:absolute;right:calc(25% - 24px);bottom:0;width:48px;height:2px;background:var(--dark);display:none}
+.ptabs.liked .mask,.ptabs.liked .ul{display:block}
+.bubble{position:absolute;left:50%;margin-left:-65px;width:130px;height:99px}
+.bubble .bs{position:absolute;left:-10px;top:-6px;width:150px;height:118.9px}
+.bubble .bi{position:absolute;inset:0;width:130px;height:99px}
+.bubble p{position:absolute;left:0;right:0;text-align:center;letter-spacing:.5px;color:#000}
+.bubble .p1{top:40px;font-weight:700;font-size:16px}
+.bubble .p2{top:61px;font-size:15px}
+.bubble{animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-5px)}}
+.mine-badge{position:absolute;left:6px;top:6px;background:var(--btn);color:#fff;font-size:10px;font-weight:700;border-radius:2px;padding:2px 5px}
+
+/* ========== EDIT PROFILE (Figma 2:172) ========== */
+.eav{display:flex;justify-content:center;gap:75px;padding-top:32px;height:184px}
+.eav button{display:flex;flex-direction:column;align-items:center;gap:13px;font-size:14px}
+.eav .ec{width:90px;height:90px;border-radius:50%;overflow:hidden;position:relative;display:grid;place-items:center}
+.eav .ec>img:first-child{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.eav .ec>img+img{position:relative}
+.editor .field{margin:16px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+.editor input,.editor textarea{flex:1;border:0;outline:0;font-size:16px;padding:10px 0;resize:none}
+.editor .cnt{font-size:12px;color:var(--grey);padding:0 16px}
+.topbar .txtbtn{font-size:15px;padding:0 8px}
+.topbar .txtbtn.save{color:var(--btn);font-weight:700}
+
+/* find friends (Figma 2:10) */
+.ffsearch{margin:16px 16px 6px;height:36px;border-radius:4px;background:var(--field);display:flex;align-items:center;padding:0 12px;gap:18px}
+.ffsearch input{border:0;outline:0;background:none;flex:1;font-size:15px}
+.ffsearch input::placeholder{color:var(--grey)}
+.ffrow{display:flex;align-items:center;height:76px;padding:0 16px;width:100%;text-align:left;font-size:15px;gap:12px}
+.ffrow .fi{width:56px;height:56px;position:relative;display:grid;place-items:center;flex:none}
+.ffrow .fi>img:first-child{position:absolute;inset:0;width:100%;height:100%}
+.ffrow .fi>img+img{position:relative}
+.ffrow .chev{width:5.79px;height:10.5px;margin-left:auto}
+.ffrow .fu{flex:1;min-width:0}
+.ffrow .fu b{display:block;font-weight:600}
+.ffrow .fu span{font-size:13px;color:var(--grey)}
+
+/* QR (Figma 2:559) */
+#scan{background:#000;color:#fff}
+#scan .qbg,#scan .qframe{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#scan .qframe{object-fit:fill}
+#scan .qbox{position:absolute;left:50%;top:323px;width:250px;height:250px;margin-left:-125px;overflow:hidden}
+@media (max-width:500px){#scan .qframe{display:none}#scan .qbox{box-shadow:0 0 0 999px rgba(0,0,0,.4);top:36%}}
+#scan .qbox img{width:250px;height:250px}
+#scan .qline{position:absolute;left:10px;right:10px;height:2px;background:linear-gradient(90deg,transparent,var(--blue),transparent);box-shadow:0 0 12px var(--blue);animation:scanl 2.2s ease-in-out infinite}
+@keyframes scanl{0%{top:8px}50%{top:240px}100%{top:8px}}
+#scan .qtxt{position:absolute;left:0;right:0;top:589px;text-align:center;font-size:13px}
+@media (max-width:500px){#scan .qtxt{top:calc(36% + 266px)}}
+#scan .qtop{position:absolute;top:44px;left:0;right:0;height:44px}
+#scan .qtop .ttl{position:absolute;left:0;right:0;top:12px;text-align:center;font:600 16px -apple-system,"SF Pro Text",sans-serif;letter-spacing:-.3px}
+#scan .qtop .l{position:absolute;left:8px;top:2px;width:40px;height:40px;display:grid;place-items:center}
+#scan .qtop .r{position:absolute;right:14px;top:12px;font-size:14px}
+#scan .mytik{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:7px;font-weight:700;font-size:12px}
+.modal{position:absolute;inset:0;z-index:120;background:rgba(0,0,0,.55);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal.on{opacity:1;pointer-events:auto}
+.qrcard{width:290px;background:#fff;border-radius:14px;padding:26px 22px 20px;text-align:center;color:var(--dark);transform:scale(.9);transition:transform .25s}
+.modal.on .qrcard{transform:none}
+.qrcard .qav{width:64px;height:64px;border-radius:50%;overflow:hidden;margin:-58px auto 8px;border:4px solid #fff}
+.qrcard .qav img{width:100%;height:100%;object-fit:cover}
+.qrcard canvas{width:200px;height:200px;margin:14px auto 10px;display:block}
+.qrcard p{font-size:13px;color:var(--grey)}
+.qrcard .btn-red{margin-top:14px;width:100%;height:40px}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+  <!-- ===== HOME ===== -->
+  <section class="view on" id="v-home">
+    <div class="feed" id="feedFY"></div>
+    <div class="feed hidden" id="feedFL"></div>
+    <div class="feedhead">
+      <button data-act="feedtab" data-v="fl">Following</button><i></i><button class="on" data-act="feedtab" data-v="fy">For You</button>
+    </div>
+  </section>
+
+  <!-- ===== DISCOVER (redesign) ===== -->
+  <section class="view" id="v-discover">
+    <div class="dhead">
+      <label class="search"><img src="assets/search-small.svg" alt=""><input id="dq" placeholder="Search" autocomplete="off"></label>
+      <button data-act="scan" aria-label="Scan"><img src="assets/scanner-icon.svg" width="18" height="18" alt=""></button>
+    </div>
+    <div class="scroll" id="dbody"></div>
+  </section>
+
+  <!-- ===== INBOX ===== -->
+  <section class="view" id="v-inbox">
+    <div class="topbar">
+      <button class="ttlbtn" data-act="inbox-filter"><span id="inboxTitle">All activity</span><img class="caret" id="inboxCaret" src="assets/caret-down.svg" alt=""></button>
+      <button class="r" data-act="dm" aria-label="Direct messages"><img src="assets/dm-icon.svg" width="22.5" height="19.5" alt=""></button>
+      <div class="dropdown" id="inboxDD"></div>
+    </div>
+    <div class="scroll" id="inboxBody" style="position:absolute;top:88px;bottom:0;left:0;right:0"></div>
+  </section>
+
+  <!-- ===== ME ===== -->
+  <section class="view" id="v-me">
+    <div class="topbar">
+      <button class="l" data-act="findfriends" aria-label="Find friends"><img src="assets/add-account.svg" width="22.46" height="22" alt=""></button>
+      <div class="ttlbtn" style="pointer-events:none"><span id="meName">Jacob West</span><img class="caret" src="assets/caret-down.svg" alt=""></div>
+      <button class="r" data-act="settings" aria-label="Settings"><img src="assets/menu-dots.svg" width="18" height="4" alt=""></button>
+    </div>
+    <div class="scroll" style="position:absolute;top:88px;bottom:0;left:0;right:0" id="meScroll">
+      <div class="pro">
+        <div class="pav"><img id="meAv" src="assets/av-jacob.png" alt=""></div>
+        <div class="hdl" id="meHandle">@jacob_w</div>
+        <div class="stats">
+          <div><b id="stFollowing">14</b><span>Following</span></div>
+          <div><b id="stFollowers">38</b><span>Followers</span></div>
+          <div><b id="stLikes">91</b><span>Likes</span></div>
+        </div>
+        <button class="edit" data-act="edit-profile">Edit profile</button>
+        <button class="bm" data-act="favorites" aria-label="Favorites"><img src="assets/profile-bookmark.svg" width="44" height="44" alt=""></button>
+        <button class="bio" id="meBio" data-act="ef" data-f="bio">Tap to add bio</button>
+      </div>
+      <div class="ptabs" id="ptabs">
+        <img src="assets/profile-tabs.svg" alt="">
+        <div class="mask"></div><div class="ul"></div>
+        <button class="pl" data-act="me-tab" data-v="posts" aria-label="Videos"></button>
+        <button class="pr" data-act="me-tab" data-v="liked" aria-label="Liked"></button>
+      </div>
+      <div style="position:relative" id="meGridWrap">
+        <div class="grid3" id="meGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TAB BAR ===== -->
+  <nav class="tabbar" id="tabbar">
+    <button class="tab on" data-act="tab" data-v="home"><span class="ic">
+      <img class="d-on" src="assets/tab-home-solid.svg" width="23.24" height="20.93" alt="">
+      <img class="d-off" src="assets/tab-home-solid.svg" width="23.24" height="20.93" alt="" style="opacity:.8">
+      <img class="l-off" src="assets/tab-home-stroke.svg" width="23.24" height="20.93" alt="">
+      <img class="l-on" src="assets/tab-home-solid.svg" width="23.24" height="20.93" alt="" style="filter:brightness(0) saturate(100%) invert(8%) sepia(13%) saturate(1500%) hue-rotate(200deg)">
+    </span>Home</button>
+    <button class="tab" data-act="tab" data-v="discover"><span class="ic">
+      <img class="d-on" src="assets/tab-discover.svg" width="20.44" height="20.85" alt="">
+      <img class="d-off" src="assets/tab-discover.svg" width="20.44" height="20.85" alt="">
+      <img class="l-off" src="assets/tab-discover-grey.svg" width="20.44" height="20.85" alt="">
+      <img class="l-on" src="assets/tab-discover-grey.svg" width="20.44" height="20.85" alt="" style="filter:brightness(0)">
+    </span>Discover</button>
+    <button class="tab create" data-act="create" aria-label="Create"><img id="createImg" src="assets/tab-create.svg" width="43" height="28" alt=""></button>
+    <button class="tab" data-act="tab" data-v="inbox"><span class="ic">
+      <img class="d-on" src="assets/tab-inbox.svg" width="20" height="20.53" alt="">
+      <img class="d-off" src="assets/tab-inbox.svg" width="20" height="20.53" alt="">
+      <img class="l-off" src="assets/tab-inbox-grey.svg" width="20" height="20.53" alt="">
+      <img class="l-on" src="assets/tab-inbox-solid.svg" width="20" height="20.53" alt="">
+    </span>Inbox<span class="badge hidden" id="inboxBadge">0</span></button>
+    <button class="tab" data-act="tab" data-v="me"><span class="ic">
+      <img class="d-on" src="assets/tab-me.svg" width="18.22" height="20.68" alt="">
+      <img class="d-off" src="assets/tab-me.svg" width="18.22" height="20.68" alt="">
+      <img class="l-off" src="assets/tab-me-stroke-grey.svg" width="18.22" height="20.68" alt="">
+      <img class="l-on" src="assets/tab-me-solid.svg" width="18.63" height="21" alt="">
+    </span>Me</button>
+  </nav>
+
+  <!-- ===== PAGES ===== -->
+  <section class="page" id="creator">
+    <div class="topbar" style="box-shadow:none">
+      <button class="l" data-act="back" aria-label="Back"><img src="assets/back-arrow-2.svg" width="10.21" height="18" alt=""></button>
+      <button class="r" data-act="cr-bell" style="right:50px" aria-label="Post notifications"><img src="assets/set-bell.svg" width="19" height="19.6" alt=""></button>
+      <button class="r" data-act="cr-share" aria-label="Share profile"><img src="assets/share-outline.svg" width="21" height="18.6" alt=""></button>
+    </div>
+    <div class="scroll" id="crBody"></div>
+    <button class="justw hidden" id="justW" data-act="just-watched">Just watched <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#161722" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l6 6 6-6M6 13l6 6 6-6"/></svg></button>
+  </section>
+
+  <section class="page dark" id="viewer">
+    <button class="vclose" data-act="back" aria-label="Close"><img src="assets/back-white.svg" width="10.21" height="18" alt=""></button>
+    <div class="vctx" id="vctx"></div>
+    <div class="feed" id="viewerFeed"></div>
+    <button class="plbar hidden" id="plbar" data-act="pl-open"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M10 8.5v7l5.5-3.5z" fill="#fff" stroke="none"/></svg><span>Playlist · <b id="plbarT"></b></span><span class="n" id="plbarN"></span><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
+    <div class="plback" id="plback" data-act="pl-close"></div>
+    <div class="plsheet" id="plsheet">
+      <div class="plhead">
+        <button class="plx" data-act="pl-close" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#161722" stroke-width="2.6" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
+        <div class="plt"><b id="plT"></b><span id="plN"></span></div>
+        <button data-act="pl-save" id="plSave" aria-label="Save playlist"><svg width="18" height="22" viewBox="0 0 18 22"><path d="M2 2h14v18l-7-5-7 5z" fill="none" stroke="#161722" stroke-width="2.2" stroke-linejoin="round"/></svg></button>
+        <button data-act="pl-share" aria-label="Share playlist"><img src="assets/share-outline.svg" width="22" height="19.5" alt=""></button>
+      </div>
+      <div class="pllist" id="plList"></div>
+    </div>
+  </section>
+
+  <section class="page" id="sound">
+    <div class="stop">
+      <button class="l" data-act="back" style="position:absolute;left:8px;top:47px;width:38px;height:38px;display:grid;place-items:center" aria-label="Back"><img src="assets/back-arrow.svg" width="10.21" height="18" alt=""></button>
+      <button data-act="share-sound" style="position:absolute;right:8px;top:47px;width:38px;height:38px;display:grid;place-items:center" aria-label="Share"><img src="assets/share-outline.svg" width="21" height="18.6" alt=""></button>
+      <div class="cover"><img class="c" src="assets/album-cover.png" alt=""><img class="p" src="assets/play-icon.svg" alt=""></div>
+      <div class="st" id="sTitle">The Round</div>
+      <div class="sa" id="sArtist">Roddy Roundicch</div>
+      <div class="sv" id="sCount">1.7M videos</div>
+      <button class="fav" id="sFav" data-act="sound-fav"><img src="assets/bookmark-small.svg" alt=""><span>Add to Favorites</span></button>
+    </div>
+    <div class="scroll"><div class="grid3" id="sGrid"></div><div style="height:110px"></div></div>
+    <button class="usebtn" data-act="use-sound"><img src="assets/videocam-icon.svg" alt="">Use this sound</button>
+  </section>
+
+  <section class="page up dark" id="camera">
+    <div class="vf" id="vf">
+      <img id="vfImg" src="assets/camera-bg.png" alt="">
+      <video id="vfVid" class="hidden" autoplay playsinline muted></video>
+      <div class="fxlayer" id="fxLayer"></div>
+      <div class="recbar" id="recbar"><i id="recfill"></i></div>
+      <button class="cam-x" data-act="cam-close" aria-label="Close"><img src="assets/cam-close.svg" alt=""></button>
+      <button class="cam-sound" data-act="cam-sounds"><img src="assets/cam-sounds.svg" alt=""><span id="camSound">Sounds</span></button>
+      <div class="tools" id="tools">
+        <button class="tool" data-act="cam-tool" data-k="flip"><span class="ti"><img src="assets/cam-flip.svg" width="27" height="22" alt=""></span>Flip</button>
+        <button class="tool" data-act="cam-tool" data-k="speed"><span class="ti"><img src="assets/cam-speed.svg" width="24.2" height="24" alt=""></span>Speed</button>
+        <button class="tool" data-act="cam-tool" data-k="beauty"><span class="ti"><img src="assets/cam-beauty.svg" width="24.97" height="24.16" alt=""></span>Beauty</button>
+        <button class="tool" data-act="cam-tool" data-k="filters"><span class="ti"><img src="assets/cam-filters.svg" width="24" height="23" alt=""></span>Filters</button>
+        <button class="tool" data-act="cam-tool" data-k="timer"><span class="ti"><img src="assets/cam-timer.svg" width="22.58" height="24" alt=""></span>Timer</button>
+        <button class="tool" data-act="cam-tool" data-k="flash"><span class="ti"><img src="assets/cam-flash.svg" width="18.63" height="24.06" alt=""></span>Flash</button>
+      </div>
+      <div class="speedrow hidden" id="speedrow"></div>
+      <div class="flashbig" id="flashbig"></div>
+      <div class="countdown hidden" id="countdown"></div>
+      <div class="cam-btns" id="camBtns">
+        <button class="effects" data-act="cam-effects"><img src="assets/cam-effects.svg" alt="">Effects</button>
+        <button class="recbtn" id="recbtn" data-act="cam-rec" aria-label="Record"><img src="assets/cam-record.svg" alt=""><span class="sq"></span></button>
+        <button class="cam-side cam-del hidden" id="camDel" data-act="cam-del" aria-label="Delete last clip">⌫</button>
+        <button class="cam-side cam-ok hidden" id="camOk" data-act="cam-done" aria-label="Done">✓</button>
+        <button class="upload" id="camUpload" data-act="cam-upload"><span class="uw"><img src="assets/cam-upload.svg" alt=""></span>Upload</button>
+      </div>
+    </div>
+    <div class="tpl hidden" id="tpl">
+      <button class="cam-x" data-act="cam-close" style="top:75px" aria-label="Close"><img src="assets/cam-close.svg" alt=""></button>
+      <h2 id="tplName">My 2020</h2>
+      <div class="sub">Upload up to 8 photos</div>
+      <div class="car" id="tplCar"></div>
+      <div class="idx" id="tplIdx">3/22</div>
+      <button class="sel" data-act="tpl-select">Select photos</button>
+    </div>
+    <div class="modes" id="modes">
+      <button data-act="cam-mode" data-m="60">60s</button>
+      <button class="on" data-act="cam-mode" data-m="15">15s</button>
+      <button data-act="cam-mode" data-m="tpl">Templates</button>
+    </div>
+  </section>
+
+  <section class="page up" id="picker">
+    <div class="topbar">
+      <button class="l txtbtn" data-act="back">Cancel</button>
+      <div class="ttl" id="pickTitle">Select photos</div>
+    </div>
+    <div class="scroll"><div class="pgrid" id="pgrid"></div></div>
+    <div class="pnext"><span id="pickHint">Upload up to 8 photos</span><button class="btn-red" id="pickNext" data-act="pick-next" disabled>Next</button></div>
+  </section>
+
+  <section class="page" id="dmpage">
+    <div class="topbar">
+      <button class="l" data-act="back" aria-label="Back"><img src="assets/back-arrow-2.svg" width="10.21" height="18" alt=""></button>
+      <div class="ttl">Direct messages</div>
+      <button class="r" data-act="dm-new" aria-label="New message"><img src="assets/plus-icon.svg" width="16" height="16" alt=""></button>
+    </div>
+    <div class="scroll" id="dmBody"></div>
+  </section>
+
+  <section class="page" id="editprofile">
+    <div class="topbar">
+      <button class="l" data-act="back" aria-label="Back"><img src="assets/back-arrow-2.svg" width="10.21" height="18" alt=""></button>
+      <div class="ttl">Edit profile</div>
+    </div>
+    <div class="scroll" id="epBody"></div>
+  </section>
+
+  <section class="page" id="editor">
+    <div class="topbar">
+      <button class="l txtbtn" data-act="back">Cancel</button>
+      <div class="ttl" id="edTitle">Name</div>
+      <button class="r txtbtn save" data-act="editor-save">Save</button>
+    </div>
+    <div class="editor"><div class="field"><input id="edInput" maxlength="30" autocomplete="off"></div><div class="cnt" id="edCnt">0/30</div></div>
+  </section>
+
+  <section class="page" id="settings">
+    <div class="topbar">
+      <button class="l" data-act="back" aria-label="Back"><img src="assets/back-arrow-2.svg" width="10.21" height="18" alt=""></button>
+      <div class="ttl">Privacy and settings</div>
+    </div>
+    <div class="scroll" id="setBody"></div>
+  </section>
+
+  <section class="page" id="findfriends">
+    <div class="topbar" style="box-shadow:none">
+      <button class="l" data-act="back" aria-label="Back"><img src="assets/back-arrow-2.svg" width="10.21" height="18" alt=""></button>
+      <div class="ttl">Find friends</div>
+      <button class="r" data-act="scan" aria-label="Scan"><img src="assets/scanner-icon.svg" width="18" height="18" alt=""></button>
+    </div>
+    <div class="scroll" id="ffBody"></div>
+  </section>
+
+  <section class="page dark" id="scan">
+    <img class="qbg" src="assets/qr-bg.png" alt="">
+    <img class="qframe" src="assets/qr-frame.svg" alt="">
+    <div class="qbox"><img src="assets/qr-scanner.svg" alt=""><div class="qline"></div></div>
+    <div class="qtxt">Align QR code in frame to scan</div>
+    <div class="qtop">
+      <button class="l" data-act="back" aria-label="Back"><img src="assets/back-white.svg" width="10.21" height="18" alt=""></button>
+      <div class="ttl">Scan</div>
+      <button class="r" data-act="scan-photos">Photos</button>
+    </div>
+    <button class="mytik" data-act="tikcode"><img src="assets/qr-code-white.svg" width="27.5" height="27.58" alt="">My TikCode</button>
+  </section>
+
+  <!-- ===== SHEETS ===== -->
+  <div class="backdrop" id="backdrop" data-act="close-sheets"></div>
+
+  <div class="sheet" id="comments">
+    <div class="body">
+      <div class="sh-title" id="cHead"><span id="cCount">579 comments</span><button class="sh-x" data-act="close-sheets" aria-label="Close"><img src="assets/close-icon.svg" alt=""></button></div>
+      <div class="clist" id="clist"></div>
+      <div class="reactpop" id="reactpop"></div>
+    </div>
+    <div class="emo-row" id="emoRow"></div>
+    <div class="foot">
+      <div class="composer" id="composer">
+        <input id="cInput" placeholder="Add comment... " autocomplete="off" enterkeyhint="send">
+        <span class="vpill"><span class="vdot"></span><span class="vwave" data-n="9"></span><span class="vtime">0:00</span></span>
+        <button class="ib vx" data-act="voice-cancel" aria-label="Discard voice note">×</button>
+        <button class="ib mic" id="micBtn" aria-label="Hold to talk">
+          <svg class="mi" viewBox="0 0 24 24" fill="none" stroke="#161722" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          <i class="sq"></i>
+        </button>
+        <button class="ib at" data-act="at" aria-label="Mention"><img src="assets/at-icon.svg" alt=""></button>
+        <button class="ib emo" data-act="emo-focus" aria-label="Emoji"><img src="assets/emoji-icon.svg" alt=""></button>
+        <button class="post" data-act="post-comment">Post</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="vnote-rail" id="vnoteRail" role="status">
+    <div class="vr-row"><span class="vdot"></span><span class="vwave" data-n="12"></span><span class="vtime">0:00</span>
+      <button class="vbtn vx" data-act="voice-cancel" aria-label="Discard voice note">×</button>
+      <button class="vbtn vstop" data-act="voice-stop" aria-label="Done"><i></i></button></div>
+    <div class="vr-tx" id="vrTx">Listening…</div>
+    <div class="vhint">Slide to lock 🔒</div>
+  </div>
+
+  <div class="sheet" id="share">
+    <div class="body">
+      <div class="sh-title">Share to</div>
+      <div class="srow">
+        <button class="si" data-act="share-to" data-n="WhatsApp"><span class="ic"><img src="assets/logo-whatsapp.svg" alt=""></span>WhatsApp</button>
+        <button class="si" data-act="share-to" data-n="WhatsApp status"><span class="ic"><img src="assets/logo-whatsapp.svg" alt=""></span>WhatsApp<br>status</button>
+        <button class="si" data-act="share-to" data-n="Message"><span class="ic"><img src="assets/logo-message-bg.svg" alt=""><img src="assets/logo-message-icon.svg" width="27" height="23.5" alt=""></span>Message</button>
+        <button class="si" data-act="share-to" data-n="SMS"><span class="ic"><img src="assets/logo-sms.svg" alt=""></span>SMS</button>
+        <button class="si" data-act="share-to" data-n="Messenger"><span class="ic"><img src="assets/logo-messenger.svg" alt=""></span>Messenger</button>
+        <button class="si" data-act="share-to" data-n="Instagram"><span class="ic"><img src="assets/logo-instagram.svg" alt=""></span>Instagram</button>
+      </div>
+      <div class="ssep"></div>
+      <div class="srow" id="shareActs">
+        <button class="si" data-act="share-act" data-k="report"><span class="ic"><img src="assets/action-circle.svg" alt=""><img src="assets/report-icon.svg" width="23.97" height="20.56" alt=""></span>Report</button>
+        <button class="si" data-act="share-act" data-k="notint"><span class="ic"><img src="assets/action-circle.svg" alt=""><img src="assets/broken-heart-icon.svg" width="24" height="22.29" alt=""></span>Not<br>interested</button>
+        <button class="si" data-act="share-act" data-k="save"><span class="ic"><img src="assets/action-circle.svg" alt=""><img src="assets/download-icon.svg" width="18.82" height="21.25" alt=""></span>Save video</button>
+        <button class="si" data-act="share-act" data-k="duet"><span class="ic"><img src="assets/action-circle.svg" alt=""><img src="assets/duet-icon.svg" width="30.5" height="20.5" alt=""></span>Duet</button>
+        <button class="si" data-act="share-act" data-k="react"><span class="ic"><img src="assets/action-circle.svg" alt=""><img src="assets/react-icon.svg" width="21.5" height="26" alt=""></span>React</button>
+        <button class="si" data-act="share-act" data-k="fav" id="favAct"><span class="ic"><img src="assets/action-circle.svg" alt=""><img src="assets/bookmark-icon.svg" width="16.5" height="20.41" alt=""></span><span id="favLbl">Add to<br>Favorites</span></button>
+      </div>
+    </div>
+    <div class="foot"><button class="sfoot" data-act="close-sheets">Cancel</button></div>
+  </div>
+
+  <div class="modal" id="qrModal" data-act="close-modal">
+    <div class="qrcard" data-act="noop">
+      <div class="qav"><img id="qrAv" src="assets/av-jacob.png" alt=""></div>
+      <b id="qrName">@jacob_w</b>
+      <canvas id="qrCanvas" width="200" height="200"></canvas>
+      <p>Scan this TikCode to follow me</p>
+      <button class="btn-red" data-act="close-modal">Done</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="statusbar">
+    <div class="time">9:41</div>
+    <div class="icons">
+      <img class="lt" src="assets/signal-white.svg" width="18.77" height="10.67" alt="">
+      <img class="lt" src="assets/wifi-white.svg" width="16.86" height="10.97" alt="">
+      <img class="lt" src="assets/battery-white.svg" width="24.5" height="10.5" alt="">
+      <img class="dk" src="assets/signal-dark.svg" width="18.77" height="10.67" alt="">
+      <img class="dk" src="assets/wifi-dark.svg" width="16.86" height="10.97" alt="">
+      <img class="dk" src="assets/battery-dark.svg" width="24.5" height="10.5" alt="">
+    </div>
+  </div>
+  <div class="homeind"></div>
+</div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const A='assets/';
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,'')+'M':n>=1e4?(n/1e3).toFixed(1).replace(/\.0$/,'')+'K':String(n);
+const hue=s=>[...s].reduce((h,c)=>(h*31+c.charCodeAt(0))%360,7);
+const store={get(k,d){try{const v=localStorage.getItem('tt.'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('tt.'+k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- data ---------- */
+const AV={craig_love:'avatar-craig.png',karennne:'av-karennne-lg.png',martini_rond:'av-martini.png',maxjacobson:'av-maxjacobson.png',kiero_d:'av-kiero.png',mis_potter:'av-mispotter.png',zackjohn:'av-zackjohn.png',joshua_l:'av-joshua.png',jacob_w:'av-jacob.png'};
+function avatar(u){return AV[u]?`<img src="${A+AV[u]}" alt="">`:`<div class="ga" style="--h:${hue(u)}">${esc(u[0].toUpperCase())}</div>`}
+
+// creator graph: tags + collaborations drive Discover recommendations.
+// type 'friend' = personal accounts (suggested in Find friends, never in Discover)
+const CREATORS={
+  'stoic.daily':{name:'Stoic Daily',tags:['stoicism','philosophy','journaling'],collabs:['dailystoa','thephilosophynook'],fans:'2.1M',verified:true},
+  'manifest.with.mia':{name:'Mia · Manifesting',tags:['manifestation','journaling','affirmations'],collabs:['luckygirl.lena','moon.journal'],fans:'960K'},
+  thephilosophynook:{name:'The Philosophy Nook',tags:['philosophy','absurdism','existentialism'],collabs:['stoic.daily','existential.ed'],fans:'740K'},
+  'alan.watts.archive':{name:'Alan Watts Archive',tags:['spirituality','philosophy','zen'],collabs:['zen.habits'],fans:'3.4M',verified:true},
+  'existential.ed':{name:'Existential Ed',tags:['existentialism','philosophy','motivation'],collabs:['thephilosophynook','socrates.cafe'],fans:'285K'},
+  'luckygirl.lena':{name:'Lena',tags:['manifestation','affirmations','lifestyle'],collabs:['manifest.with.mia'],fans:'1.3M'},
+  dailystoa:{name:'The Daily Stoa',tags:['stoicism','philosophy','discipline'],collabs:['stoic.daily'],fans:'512K'},
+  'moon.journal':{name:'Moon Journal',tags:['manifestation','journaling','spirituality'],collabs:['manifest.with.mia'],fans:'198K'},
+  'socrates.cafe':{name:'Socrates Café',tags:['philosophy','existentialism','debate'],collabs:['existential.ed'],fans:'91K'},
+  'zen.habits':{name:'Zen Habits',tags:['zen','spirituality','mindfulness'],collabs:['alan.watts.archive'],fans:'620K'},
+  'sweetbites.la':{name:'Sweet Bites LA',tags:['mukbang','dessert','food','losangeles'],collabs:['luckygirl.lena'],fans:'1.8M'},
+  'the.overthinkers.club':{name:'Overthinkers Club',tags:['philosophy','mindfulness','absurdism'],collabs:['thephilosophynook'],fans:'143K'},
+  craig_love:{name:'Craig Love',tags:['music','live','satisfying'],collabs:['karennne','lena.films'],fans:'1.2M'},
+  karennne:{name:'Karen',tags:['nature','travel','music','mindfulness'],collabs:['craig_love','fogchaser'],fans:'88K'},
+  martini_rond:{name:'Martina Rond',tags:['handwriting','journaling'],collabs:['inkandpaper'],fans:'—',type:'friend'},
+  maxjacobson:{name:'Max Jacobson',tags:['art','philosophy'],collabs:['martini_rond'],fans:'—',type:'friend'},
+  kiero_d:{name:'Kiero D',tags:['sneakers'],collabs:['mis_potter'],fans:'—',type:'friend'},
+  mis_potter:{name:'Mis Potter',tags:['fashion','manifestation'],collabs:['kiero_d'],fans:'—',verified:true,type:'friend'},
+  zackjohn:{name:'Zack John',tags:['comedy','stoicism'],collabs:['joshua_l'],fans:'—',type:'friend'},
+  joshua_l:{name:'Joshua L',tags:['philosophy'],collabs:['zackjohn'],fans:'—',type:'friend'},
+  fogchaser:{name:'Fog Chaser',tags:['nature','travel','photography'],collabs:['karennne','milo.the.husky'],fans:'310K'},
+  'skyline.sam':{name:'Sam Skyline',tags:['architecture','travel','photography'],collabs:['fogchaser'],fans:'74K'},
+  'lena.films':{name:'Lena Films',tags:['music','live','photography'],collabs:['craig_love'],fans:'156K'},
+  inkandpaper:{name:'Ink & Paper',tags:['handwriting','art','asmr'],collabs:['martini_rond'],fans:'820K'},
+  sneakerdoc:{name:'Sneaker Doc',tags:['sneakers','cleaning'],collabs:['kiero_d'],fans:'1.1M'},
+  'milo.the.husky':{name:'Milo',tags:['dogs','nature'],collabs:['fogchaser'],fans:'3.3M'},
+  'wool.sparks':{name:'Wool Sparks',tags:['photography','longexposure'],collabs:['lena.films'],fans:'45K'},
+  'fall.notes':{name:'Fall Notes',tags:['nature','asmr'],collabs:['inkandpaper'],fans:'19K'},
+};
+
+// For You: philosophy + manifestation. `niche` = hyper-specific searches this video leads to.
+const VIDEOS=[
+  {id:'f1',user:'stoic.daily',date:'10-26',caption:'Read this before your 8am ☁️ #stoicism #philosophy #marcusaurelius',quote:'“You have power over your mind —\nnot outside events.”\n— Marcus Aurelius',img:'following-bg.jpg',sound:{t:'Experience',a:'Ludovico Einaudi',n:'2.4M videos'},likes:412000,comments:579,dur:14,
+    niche:['stoic morning routines for college students','Marcus Aurelius journaling prompts','stoic quotes over foggy mountain edits']},
+  {id:'f2',user:'manifest.with.mia',date:'10-26',caption:'Day 12 of the 369 method ✨ say it like it’s already yours #manifestation #369method #lawofattraction',quote:'I am so grateful\nit’s already mine.',img:'album-5.png',sound:{t:'Sunflower',a:'Post Malone',n:'8.1M videos'},likes:228000,comments:1840,dur:12,
+    niche:['369 method scripting for dream internships','autumn manifestation journaling with dried leaves','manifesting a 4.0 GPA before finals']},
+  {id:'f3',user:'thephilosophynook',date:'10-25',caption:'Camus in 30 seconds 🪨 #absurdism #camus #philosophy',quote:'“One must imagine\nSisyphus happy.”',img:'me-thumb-4.png',sound:{t:'Nuvole Bianche',a:'Ludovico Einaudi',n:'5.6M videos'},likes:97300,comments:612,dur:11,
+    niche:['Camus absurdism explained over Yosemite climbing','Myth of Sisyphus book clubs in LA','absurdist philosophy for burnt-out students']},
+  {id:'f4',user:'alan.watts.archive',date:'10-24',caption:'Close your eyes and listen 🌌 #alanwatts #spirituality #philosophy',quote:'“You are the universe\nexperiencing itself.”',img:'me-thumb-3.png',sound:{t:'The Real You',a:'Alan Watts',n:'930K videos'},likes:1240000,comments:8421,dur:13,
+    niche:['Alan Watts lectures over northern lights footage','1 hour Alan Watts sleep talks with rain','zen philosophy for anxious overthinkers at 2am']},
+  {id:'f5',user:'existential.ed',date:'10-24',caption:'Nietzsche’s amor fati, but make it a Tuesday #nietzsche #existentialism #philosophy',quote:'amor fati —\nlove everything\nthat happens to you',img:'tpl-photo-main.png',sound:{t:'Time',a:'Hans Zimmer',n:'3.3M videos'},likes:66400,comments:402,dur:10,
+    niche:['Nietzsche amor fati fine-line tattoo ideas','existentialism street interviews in NYC','Nietzsche quotes as gym motivation edits']},
+  {id:'f6',user:'luckygirl.lena',date:'10-23',caption:'Affirmations I say on my walk to class 🌉 #luckygirlsyndrome #manifestation #affirmations',quote:'Everything is always\nworking out for me.',img:'album-7.png',sound:{t:'Lucky Girl',a:'Lena',n:'210K videos'},likes:503000,comments:2960,dur:12,
+    niche:['lucky girl syndrome morning walks in San Francisco','affirmations for college girls walking to class','2026 manifestation vision boards for creatives']},
+];
+const OTHER=[
+  {id:'v1',user:'craig_love',date:'1-28',caption:'The most satisfying Job #fyp #satisfying #roadmarking',sound:{t:'The Round',a:'Roddy Roundicch',n:'1.7M videos'},img:'home-bg.png',likes:328700,comments:578,dur:14},
+  {id:'v2',user:'karennne',date:'1-28',caption:'#avicii #wflove',sound:{t:'Waiting For Love (ft. Martin Garrix)',a:'Avicii',n:'3.2M videos'},img:'following-bg.jpg',likes:4445,comments:64,dur:12},
+  {id:'v3',user:'skyline.sam',date:'1-27',caption:'Looking up in Sydney never gets old 🏙️ #architecture #citylife',sound:{t:'original sound',a:'skyline.sam',n:'1,204 videos'},img:'camera-bg.png',likes:21300,comments:402,dur:10},
+  {id:'v4',user:'martini_rond',date:'1-26',caption:'How neatly I write the date in my book ✍️ #handwriting #asmr',sound:{t:'Lo-fi Study',a:'Chillhop',n:'640K videos'},img:'album-5.png',likes:56900,comments:744,dur:11},
+  {id:'v5',user:'wool.sparks',date:'1-25',caption:'Steel wool at the pier 🔥 #longexposure #photography',sound:{t:'Sparks',a:'Coldplay',n:'902K videos'},img:'album-3.png',likes:241000,comments:3102,dur:9},
+  {id:'v6',user:'milo.the.husky',date:'1-24',caption:'Sunset hike with Milo 🐶 #dogsoftiktok #nature',sound:{t:'Golden Hour',a:'JVKE',n:'5.1M videos'},img:'album-9.png',likes:1240000,comments:8421,dur:12},
+  {id:'v7',user:'kiero_d',date:'1-23',caption:'Use this on your air forces to whiten them 👟 #sneakers #cleaning',sound:{t:'Bubbles',a:'kiero_d',n:'12K videos'},img:'album-2.png',likes:84200,comments:1290,dur:10},
+];
+const EXTRA=[ // only reachable from Discover
+  {id:'p1',user:'dailystoa',caption:'A stoic morning routine for students: wake, journal, cold water, one hard thing first #stoicism #morningroutine #college',quote:'Waste no more time arguing\nwhat a good person should be.\nBe one.',img:'camera-bg.png',likes:188000,comments:1210},
+  {id:'p2',user:'stoic.daily',caption:'5 Marcus Aurelius journaling prompts for tonight 📓 #stoicism #journaling #marcusaurelius',quote:'What stood in the way\nbecame the way.',img:'album-1.png',likes:342000,comments:2030},
+  {id:'p3',user:'moon.journal',caption:'Scripting my dream internship using the 369 method 🌙 #manifestation #369method #scripting',quote:'3 times morning · 6 times noon\n9 times night',img:'album-12.png',likes:121000,comments:880},
+  {id:'p4',user:'socrates.cafe',caption:'Asked strangers in NYC: is life absurd? #existentialism #streetinterview #philosophy',quote:'“Is life absurd?”',img:'me-thumb-2.png',likes:74500,comments:930},
+  {id:'p5',user:'zen.habits',caption:'Zen for overthinkers: notice the thought, let it pass #zen #mindfulness #philosophy',quote:'Let it come.\nLet it go.',img:'tpl-photo-left.png',likes:259000,comments:1460},
+  {id:'p6',user:'the.overthinkers.club',caption:'Absurdism for burnt-out students, a thread 🧵 #absurdism #camus #burnout',quote:'The struggle itself\nis enough to fill a heart.',img:'album-10.png',likes:58000,comments:377},
+  {id:'p7',user:'manifest.with.mia',caption:'My autumn manifestation journal setup 🍂 #manifestation #journaling #fall',quote:'Write it as if\nit already happened.',img:'album-2.png',likes:96000,comments:540},
+  {id:'p8',user:'existential.ed',caption:'Amor fati tattoo ideas, fine line edition #nietzsche #tattoo #amorfati',quote:'amor fati',img:'album-4.png',likes:43000,comments:290},
+  {id:'p9',user:'alan.watts.archive',caption:'1 hour of Alan Watts with rain for sleep 🌧️ #alanwatts #sleep #spirituality',quote:'This is the real secret of life.',img:'album-6.png',likes:870000,comments:5120},
+  {id:'p10',user:'luckygirl.lena',caption:'Morning walk affirmations in San Francisco ☀️ #luckygirlsyndrome #sanfrancisco #affirmations',quote:'I am the luckiest\ngirl in the world.',img:'album-9.png',likes:212000,comments:1750},
+  {id:'m1',user:'sweetbites.la',caption:'Dessert mukbang at a hidden bakery in LA 🍰 #mukbang #dessert #losangeles',img:'album-12.png',likes:1900000,comments:12400,
+    niche:['mukbangs of beautiful desserts in LA','matcha dessert mukbang in Koreatown LA','no-talking ASMR cheesecake mukbang']},
+  {id:'m2',user:'sweetbites.la',caption:'Trying every pastry at an LA night market 🌃 #mukbang #dessert #foodtok',img:'album-8.png',likes:640000,comments:3900,
+    niche:['LA night market dessert crawl','mukbangs of beautiful desserts in LA','late-night churro mukbang in Los Angeles']},
+  {id:'x1',user:'fogchaser',caption:'Above the clouds at 6am ☁️ #nature #travel',img:'tpl-photo-left.png',likes:99100,comments:812},
+  {id:'x2',user:'lena.films',caption:'Front row, every time 🎸 #live #music',img:'me-thumb-1.png',likes:45200,comments:390},
+  {id:'x3',user:'inkandpaper',caption:'Calligraphy for 60 seconds #handwriting #asmr',img:'album-4.png',likes:310000,comments:2200},
+  {id:'x4',user:'sneakerdoc',caption:'10 year old Jordans, restored #sneakers',img:'album-1.png',likes:540000,comments:4100},
+  {id:'x5',user:'fall.notes',caption:'Leaf season 🍁 #nature #asmr',img:'album-6.png',likes:23000,comments:150},
+  {id:'x6',user:'skyline.sam',caption:'Brutalism appreciation post #architecture',img:'me-thumb-2.png',likes:18000,comments:210},
+  {id:'x7',user:'fogchaser',caption:'Northern lights, finally #photography #travel',img:'me-thumb-3.png',likes:780000,comments:6600},
+  {id:'x8',user:'milo.the.husky',caption:'Milo vs. the first snow ❄️ #dogs',img:'album-10.png',likes:2100000,comments:15000},
+  {id:'x9',user:'lena.films',caption:'Yosemite from the valley floor #photography',img:'me-thumb-4.png',likes:61000,comments:480},
+  {id:'x10',user:'wool.sparks',caption:'Market day colours #photography',img:'album-12.png',likes:14000,comments:90},
+].map(v=>({date:'1-22',sound:{t:'original sound',a:v.user,n:'2,310 videos'},dur:11,...v}));
+const ALLV=[...VIDEOS,...OTHER,...EXTRA];
+const vid=id=>ALLV.find(v=>v.id===id);
+
+const S={
+  me:store.get('me',{name:'Jacob West',user:'jacob_w',bio:'',ig:'',yt:'',photo:'av-jacob.png'}),
+  followed:new Set(store.get('followed.v2',['stoic.daily','karennne'])),
+  baseFollowing:12,followers:38,likes:91,
+  liked:new Set(),favVideos:new Set(),favSounds:new Set(),notint:new Set(),dismissed:new Set(),
+  posts:[],notifs:[],unread:0,tab:'home',feed:'fy',inboxFilter:'All activity',meTab:'posts',
+  emoji:store.get('emoji',{'😂':5,'😍':4,'🔥':4,'👏':3,'😭':2,'🥰':2,'😮':1,'💀':1}),
+  history:store.get('history',[]).filter(id=>ALLV.some(v=>v.id===id)), // watched video ids, oldest first
+};
+const saveFollowed=()=>store.set('followed.v2',[...S.followed]);
+
+/* ---------- comments data (Figma 2:772) ---------- */
+const COMMENTS={f1:[
+  {u:'martini_rond',t:'Writing this on my wall tonight',time:'22h',likes:8098,rep:4},
+  {u:'maxjacobson',t:'Marcus never misses',time:'22h',likes:8098,rep:1},
+  {u:'zackjohn',t:'Needed this before my exam 🙏',time:'22h',likes:8098,rep:0},
+  {u:'kiero_d',t:'the fog + this quote 🤯',time:'21h',likes:8098,rep:9},
+  {u:'mis_potter',t:'Saving this for my 6am journal ✍️',time:'13h',likes:8098,rep:4},
+  {u:'karennne',t:'manifesting peace for everyone reading 🫶',time:'22h',likes:8098,rep:2},
+  {u:'joshua_l',t:'My overthinking could never… but I’m trying',time:'15h',likes:8098,rep:0},
+]};
+const POOL=['needed this today 🙏','saving this for my journal','this is your sign ✨','reading this at 2am hits different','the universe sent me here','claiming this energy 🫶','okay this rewired my brain 🤯','sending to my group chat rn','day 1 of trying this','amor fati 💯'];
+const RPOOL=['😂😂😂','facts','no because same','fr fr','this reply 💀','agreed 👏','LMAO'];
+const UPOOL=Object.keys(AV).filter(u=>u!=='jacob_w');
+function commentsFor(id){
+  if(!COMMENTS[id]){const v=vid(id);let h=hue(id);COMMENTS[id]=Array.from({length:7},(_,i)=>{h=(h*17+11)%997;return{u:UPOOL[(h+i)%UPOOL.length],t:POOL[(h+i*3)%POOL.length],time:((h%20)+1)+'h',likes:(h*13)%9000+12,rep:h%5}})}
+  COMMENTS[id].forEach((c,i)=>{c.id=c.id||id+'c'+i;c.reacts=c.reacts||[]});
+  return COMMENTS[id];
+}
+
+/* ---------- chrome / navigation ---------- */
+const phone=$('#phone');
+const stack=[];
+function chrome(){
+  const top=stack[stack.length-1];
+  const dark=top?$('#'+top).classList.contains('dark'):S.tab==='home';
+  phone.classList.toggle('light',!dark);
+  $('#tabbar').classList.toggle('light',S.tab!=='home');
+  $('#createImg').src=A+(S.tab==='home'?'tab-create.svg':'tab-create-light.svg');
+}
+function go(tab){
+  S.tab=tab;
+  $$('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+tab));
+  $$('.tab[data-v]').forEach(t=>t.classList.toggle('on',t.dataset.v===tab));
+  if(tab==='discover')renderDiscover();
+  if(tab==='inbox'){S.unread=0;renderBadge();renderInbox()}
+  if(tab==='me')renderMe();
+  closeSheets();chrome();
+}
+let zTop=0;
+function openPage(id){const p=$('#'+id);const i=stack.indexOf(id);if(i>=0)stack.splice(i,1);stack.push(id);p.style.zIndex=40+(++zTop%19);p.classList.add('open');chrome()} // reopening brings it to the front
+function closePage(){const id=stack.pop();if(!id)return;$('#'+id).classList.remove('open');if(id==='camera')stopCam();if(id==='viewer'){$('#viewerFeed').innerHTML='';closePlSheet();PLV.pl=null}chrome()}
+function closeAllPages(){while(stack.length)closePage()}
+let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),1800)}
+
+/* ---------- feed ---------- */
+function captionHTML(c){return esc(c).replace(/(#[\w]+)/g,'<b>$1</b>')}
+function videoHTML(v){
+  const s=v.sound,stxt=`${esc(s.a)} - ${esc(s.t)}`;
+  return `<div class="video" data-id="${v.id}" style="--dur:${v.dur||12}s">
+    <img class="bg" src="${A+v.img}" alt="">
+    <div class="shade"></div>
+    ${v.quote?`<div class="quote">${esc(v.quote)}</div>`:''}
+    <div class="tapzone" data-act="tap"></div>
+    <img class="pausei" src="${A}play-icon.svg" alt="">
+    <div class="rail">
+      <button class="av" data-act="avatar" data-user="${v.user}">${avatar(v.user)}</button>
+      <button class="follow ${S.followed.has(v.user)?'done':''}" data-act="follow" data-user="${v.user}" aria-label="Follow"><img src="${A}plus-follow.svg" alt=""></button>
+      <button class="act like ${S.liked.has(v.id)?'liked':''}" data-act="like" data-id="${v.id}"><span class="ico"><img class="off" src="${A}heart-icon.svg" alt=""><img class="on" src="${A}heart-red.svg" alt=""></span><span class="n">${fmt(v.likes+(S.liked.has(v.id)?1:0))}</span></button>
+      <button class="act cmt" data-act="comments" data-id="${v.id}"><span class="ico"><img src="${A}comment-icon.svg" alt=""></span><span class="n">${fmt(v.comments)}</span></button>
+      <button class="act shr" data-act="share" data-id="${v.id}"><span class="ico"><img src="${A}share-icon.svg" alt=""></span>Share</button>
+      <button class="disc" data-act="sound" data-id="${v.id}" aria-label="Sound"><img src="${A}disc.png" alt=""><span class="dc">${avatar(v.user)}</span></button>
+    </div>
+    <img class="tones" src="${A}floating-tones.svg" alt="">
+    <div class="meta"><div class="who" data-act="open-creator" data-user="${v.user}">@${esc(v.user)} <span>· ${esc(v.date||'')}</span></div><div class="cap">${captionHTML(v.caption)}</div></div>
+    <div class="music"><img src="${A}music-icon.svg" alt=""><div class="mq"><span>${stxt} &nbsp;·&nbsp; ${stxt} &nbsp;·&nbsp;</span></div></div>
+    <div class="prog"><i></i></div>
+  </div>`;
+}
+const observers={};
+function setCurrent(feedEl,el){
+  if(el.classList.contains('current'))return;
+  $$('.video.current',feedEl).forEach(x=>x.classList.remove('current'));el.classList.add('current');el.classList.remove('paused');
+  // counts as "watched" after 1.5s on screen (For You + Discover viewer) → feeds niche searches
+  if(feedEl.id!=='feedFL')setTimeout(()=>{if(el.classList.contains('current')&&el.isConnected)addHistory(el.dataset.id)},1500);
+}
+function observe(feedEl){
+  observers[feedEl.id]?.disconnect();
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)setCurrent(feedEl,e.target)}),{root:feedEl,threshold:.6});
+  $$('.video',feedEl).forEach(v=>io.observe(v));observers[feedEl.id]=io;
+  const first=$('.video',feedEl);if(first&&!$('.video.current',feedEl))setCurrent(feedEl,first);
+}
+function addHistory(id){if(S.history[S.history.length-1]===id)return;S.history=S.history.filter(x=>x!==id).concat(id).slice(-20);store.set('history',S.history)}
+function renderFY(){const el=$('#feedFY');const list=VIDEOS.filter(v=>!S.notint.has(v.id));el.innerHTML=(list.concat(list)).map(videoHTML).join('');observe(el)}
+function renderFL(){
+  const el=$('#feedFL');
+  const list=ALLV.filter(v=>S.followed.has(v.user));
+  if(!list.length){
+    const sug=recCreators().slice(0,6);
+    el.innerHTML=`<div class="empty-follow"><h3>Follow accounts you like</h3><p>Their latest videos will show up here.</p><div class="sugg-row">${sug.map(c=>`<div class="sugg"><div class="avw">${avatar(c.u)}</div><div class="nm">${esc(c.u)}</div><div class="rs">${c.why}</div><button class="btn-red" data-act="follow" data-user="${c.u}">Follow</button></div>`).join('')}</div></div>`;
+    return;
+  }
+  el.innerHTML=list.map(videoHTML).join('');observe(el);
+}
+function refreshVideoUI(id){
+  const v=vid(id);
+  $$(`.video[data-id="${id}"]`).forEach(el=>{
+    const lk=$('.like',el);lk.classList.toggle('liked',S.liked.has(id));$('.n',lk).textContent=fmt(v.likes+(S.liked.has(id)?1:0));
+    $('.cmt .n',el).textContent=fmt(v.comments);
+  });
+}
+function toggleLike(id,force){
+  const on=force??!S.liked.has(id);
+  on?S.liked.add(id):S.liked.delete(id);refreshVideoUI(id);
+}
+let lastTap=0,tapT;
+function onTap(el,e){
+  const vEl=el.closest('.video'),now=Date.now();
+  if(now-lastTap<300){clearTimeout(tapT);lastTap=0;burst(vEl,e);toggleLike(vEl.dataset.id,true);return}
+  lastTap=now;tapT=setTimeout(()=>vEl.classList.toggle('paused'),300);
+}
+function burst(vEl,e){
+  const r=vEl.getBoundingClientRect(),k=r.width/vEl.offsetWidth;
+  const h=document.createElement('img');h.src=A+'heart-red.svg';h.className='burst';
+  h.style.left=(e.clientX-r.left)/k+'px';h.style.top=(e.clientY-r.top)/k+'px';h.style.setProperty('--r',(Math.random()*40-20)+'deg');
+  vEl.appendChild(h);setTimeout(()=>h.remove(),900);
+}
+function follow(u){
+  if(S.followed.has(u))return;
+  S.followed.add(u);saveFollowed();
+  $$(`.follow[data-user="${u}"]`).forEach(b=>b.classList.add('done'));
+  $$(`[data-act="follow"][data-user="${u}"].btn-red`).forEach(b=>{b.textContent='Following';b.classList.add('done')});
+  toast('Following @'+u);
+}
+function setFeed(f){
+  S.feed=f;$$('.feedhead button').forEach(b=>b.classList.toggle('on',b.dataset.v===f));
+  $('#feedFY').classList.toggle('hidden',f!=='fy');$('#feedFL').classList.toggle('hidden',f!=='fl');
+  if(f==='fl')renderFL();
+}
+
+/* ---------- sheets ---------- */
+let sheetVid=null;
+function openSheet(id){$('#backdrop').classList.add('on');$('#'+id).classList.add('open')}
+function closeSheets(){$('#backdrop').classList.remove('on');$$('.sheet.open').forEach(s=>s.classList.remove('open'));hideReact();$('#cInput').blur()}
+
+/* comments */
+function cHTML(c,reply){
+  const mine=c.u===S.me.user;
+  return `<div class="c ${reply?'reply':''} ${c.fresh?'mine':''}" data-cid="${c.id}">
+    <div class="cav">${mine?`<img src="${A+S.me.photo}" alt="">`:avatar(c.u)}</div>
+    <div class="cb">
+      <div class="cu">${esc(c.u)}${CREATORS[c.u]?.verified?`<img src="${A}verified-tick.svg" alt="">`:''}${sheetVid&&vid(sheetVid).user===c.u?'<span class="tag">· Creator</span>':''}</div>
+      <div class="ct">${esc(c.t)}<time>${esc(c.time)}</time></div>
+      ${c.reacts.length?`<div class="reacts">${c.reacts.join('')}</div>`:''}
+      ${!reply&&c.rep?`<button class="rep ${c.open?'open':''}" data-act="replies" data-cid="${c.id}">${c.open?'Hide replies':`View replies (${c.rep})`}<img src="${A}chevron-down-small.svg" alt=""></button>`:''}
+    </div>
+    <button class="clk ${c.liked?'on':''}" data-act="clike" data-cid="${c.id}"><img class="hs" src="${A}heart-stroke.svg" alt=""><img class="hr" src="${A}heart-red.svg" alt=""><span>${fmt(c.likes+(c.liked?1:0))}</span></button>
+  </div>`;
+}
+function renderComments(){
+  const list=commentsFor(sheetVid);
+  $('#cCount').textContent=`${vid(sheetVid).comments.toLocaleString()} comments`;
+  $('#clist').innerHTML=list.map(c=>cHTML(c)+(c.open?c.replies.map(r=>cHTML(r,true)).join(''):'')).join('');
+}
+function findComment(cid){for(const k in COMMENTS)for(const c of COMMENTS[k]){if(c.id===cid)return c;for(const r of c.replies||[])if(r.id===cid)return r}}
+function openComments(id){sheetVid=id;renderComments();renderEmojiRow();$('#clist').scrollTop=0;openSheet('comments')}
+function postComment(){
+  const i=$('#cInput'),t=i.value.trim();if(!t)return;
+  countEmoji(t);
+  const list=commentsFor(sheetVid);
+  list.unshift({id:'m'+Date.now(),u:S.me.user,t,time:'now',likes:0,rep:0,reacts:[],fresh:true});
+  vid(sheetVid).comments++;refreshVideoUI(sheetVid);
+  i.value='';composerState();renderComments();$('#clist').scrollTop=0;
+  setTimeout(()=>list[0]&&(list[0].fresh=false),600);
+}
+function composerState(){$('#composer').classList.toggle('has',!!$('#cInput').value.trim())}
+
+/* feature: emoji suggestions ranked by the user's own usage */
+const EMO_RE=/\p{Extended_Pictographic}(️|‍\p{Extended_Pictographic})*/gu;
+function countEmoji(text){(text.match(EMO_RE)||[]).forEach(e=>S.emoji[e]=(S.emoji[e]||0)+1);store.set('emoji',S.emoji)}
+const topEmoji=n=>Object.entries(S.emoji).sort((a,b)=>b[1]-a[1]).slice(0,n).map(e=>e[0]);
+const EMO_KEYS=[[/grate|thank|bless|needed|pray|hope/i,'🙏'],[/love|beautiful|heart|cute|gorgeous/i,'🥰'],[/cry|sad|tears|emotional|hit/i,'😭'],[/lol|funny|laugh|haha|dead|hilarious/i,'😂'],[/fire|insane|amazing|best|incredible|satisf/i,'🔥'],[/mind|deep|wow|crazy|rewir|blown/i,'🤯'],[/peace|calm|relax|breath|zen|quiet/i,'🕊️'],[/star|universe|dream|magic|manifest|lucky|claim|sign/i,'✨'],[/true|facts|real|agree|exactly|right/i,'💯'],[/sleep|rain|night|tired|2am|3am/i,'🌙'],[/strong|gym|discipline|power|motivat/i,'💪'],[/write|journal|book|read|note/i,'✍️']];
+function suggestEmoji(text,n=8){const ctx=EMO_KEYS.filter(([r])=>r.test(text||'')).map(k=>k[1]);return{ctx:ctx.length>0,list:[...new Set([...ctx,...topEmoji(n)])].slice(0,n)}}
+function renderEmojiRow(text=''){const s=suggestEmoji(text);$('#emoRow').innerHTML=s.list.map(e=>`<button data-act="emoji" data-e="${e}">${e}</button>`).join('')}
+function insertAtCursor(txt){const i=$('#cInput'),s=i.selectionStart??i.value.length,e=i.selectionEnd??i.value.length;i.value=i.value.slice(0,s)+txt+i.value.slice(e);i.focus();const p=s+txt.length;i.setSelectionRange(p,p);composerState()}
+
+/* feature: long-press a comment → react with your most used emoji (Figma "Comment Hold and Press") */
+let pressT,pressEl,pressMoved=false;
+$('#clist').addEventListener('pointerdown',e=>{
+  const c=e.target.closest('.c');if(!c||e.target.closest('button'))return;
+  pressMoved=false;pressEl=c;c.classList.add('pressing');
+  pressT=setTimeout(()=>{c.classList.remove('pressing');showReact(c)},420);
+});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>$('#clist').addEventListener(ev,()=>{clearTimeout(pressT);pressEl?.classList.remove('pressing')}));
+$('#clist').addEventListener('scroll',()=>{clearTimeout(pressT);pressEl?.classList.remove('pressing');hideReact()});
+function showReact(c){
+  const pop=$('#reactpop'),body=c.closest('.body');
+  pop.innerHTML=`<span class="lbl"></span>`+topEmoji(5).map(e=>`<button data-act="react" data-e="${e}" data-cid="${c.dataset.cid}">${e}</button>`).join('');
+  const top=c.offsetTop-$('#clist').scrollTop+$('#clist').offsetTop-62;
+  pop.style.top=Math.max(4,top)+'px';pop.classList.add('on');
+  navigator.vibrate?.(10);
+}
+function hideReact(){$('#reactpop').classList.remove('on')}
+
+/* feature: voice-to-text as a small voice note.
+   Hold the mic in the comment box, or the comment icon on a video, to dictate. Release = done.
+   Slide anywhere while holding = lock: it keeps recording hands-free until you tap ■ (or × to discard).
+   From a video, nothing opens until you're done — then comments open with your words in the box. */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const V={on:false,holding:false,locked:false,src:null,vid:null,rec:null,final:'',interim:'',base:'',t0:0,timer:null,demo:null,raf:null,x0:0,y0:0};
+const DEMO=['I really needed this today thank you','okay this just blew my mind','manifesting this energy for everyone reading','this is so true I am writing it in my journal'];
+const cin=$('#cInput'),mic=$('#micBtn'),vRail=$('#vnoteRail');
+$$('.vwave').forEach(w=>w.innerHTML='<i></i>'.repeat(+w.dataset.n));
+const said=()=>(V.final+' '+V.interim).trim();
+let emoT;
+function vRender(){
+  if(!V.on)return;const t=said();
+  if(V.src==='rail'){$('#vrTx').textContent=t?(t.length>38?'…'+t.slice(-38):t):'Listening…'}
+  else{cin.value=(V.base?V.base+' ':'')+t;cin.scrollLeft=cin.scrollWidth;composerState();clearTimeout(emoT);emoT=setTimeout(()=>renderEmojiRow(cin.value),200)}
+}
+function vChrome(){
+  const rail=V.src==='rail',c=$('#composer');
+  vRail.classList.toggle('on',V.on&&rail);vRail.classList.toggle('locked',V.on&&V.locked);
+  c.classList.toggle('recording',V.on&&!rail);c.classList.toggle('locked',V.on&&!rail&&V.locked);
+  cin.placeholder=V.on&&!rail?(V.locked?'Listening… tap ■ when done':'Listening… slide to lock'):'Add comment... ';
+}
+function placeRail(btn){const p=phone.getBoundingClientRect(),r=btn.getBoundingClientRect(),k=p.width/phone.offsetWidth;vRail.style.top=((r.top+r.height/2-p.top)/k)+'px'}
+function startVoice(src,e,btn){
+  if(V.on)return;
+  Object.assign(V,{on:true,holding:true,locked:false,src,final:'',interim:'',t0:Date.now(),x0:e.clientX,y0:e.clientY,base:src==='rail'?'':cin.value.trim(),vid:btn?.dataset.id||sheetVid});
+  if(src==='rail'){placeRail(btn);$('#vrTx').textContent='Listening…'}else cin.blur();
+  $$('.vtime').forEach(x=>x.textContent='0:00');vChrome();
+  try{navigator.vibrate?.(12)}catch(err){}
+  V.timer=setInterval(()=>{const s=Math.floor((Date.now()-V.t0)/1000);$$('.vtime').forEach(x=>x.textContent=`0:${String(s).padStart(2,'0')}`);if(s>=59)endVoice(true)},250);
+  animateWave();
+  const demo=()=>{ // browsers without speech recognition (or mic blocked): simulated transcript
+    const words=DEMO[Math.floor(Math.random()*DEMO.length)].split(' ');let i=0;
+    V.demo=setInterval(()=>{if(i<words.length){V.final+=(V.final?' ':'')+words[i++];vRender()}},260);
+  };
+  if(!SR){demo();return}
+  try{
+    const r=new SR();V.rec=r;r.lang=navigator.language||'en-US';r.interimResults=true;r.continuous=true;
+    r.onresult=ev=>{let fin='',int='';for(const res of ev.results){res.isFinal?fin+=res[0].transcript:int+=res[0].transcript}V.final=fin.trim();V.interim=int;vRender()};
+    r.onerror=ev=>{if(V.on&&['not-allowed','service-not-allowed','network'].includes(ev.error)){V.rec=null;demo()}};
+    r.start();
+  }catch(err){demo()}
+}
+function animateWave(){
+  const bars=$$('.vwave i');let t=0;
+  const step=()=>{if(!V.on)return;t++;bars.forEach((b,i)=>{const a=Math.abs(Math.sin(t/5+i*.7))*Math.random();b.style.height=(4+a*12)+'px';b.classList.toggle('hot',a>.3)});V.raf=setTimeout(step,90)};step();
+}
+function lockVoice(){if(V.locked)return;V.locked=true;try{navigator.vibrate?.(8)}catch(err){}vChrome()}
+function endVoice(keep){
+  if(!V.on)return;V.on=false;V.holding=false;
+  clearInterval(V.timer);clearInterval(V.demo);clearTimeout(V.raf);
+  let done=false;
+  const finish=()=>{if(done)return;done=true;
+    const t=said(),src=V.src;V.locked=false;vChrome();
+    if(src==='rail'){
+      if(keep&&t){openComments(V.vid);cin.value=t;composerState();renderEmojiRow(t);setTimeout(()=>{cin.focus({preventScroll:true});cin.setSelectionRange(t.length,t.length)},350)}
+      else if(keep)toast('Didn’t catch that — try again');
+    }else{
+      cin.value=keep&&t?(V.base?V.base+' ':'')+t:V.base;composerState();renderEmojiRow(cin.value);
+      if(keep&&t)cin.focus({preventScroll:true});
+    }
+    if(!keep)toast('Voice note discarded');
+  };
+  if(V.rec){const r=V.rec;V.rec=null;r.onend=finish;try{r.stop()}catch(err){finish()}setTimeout(finish,900)}else finish();
+}
+// mic in the comment box: hold to dictate; when locked, the mic turns into ■
+mic.addEventListener('pointerdown',e=>{e.preventDefault();if(V.on){if(V.locked)endVoice(true);return}startVoice('mic',e)});
+mic.addEventListener('contextmenu',e=>e.preventDefault());
+// holding the empty comment box also dictates
+let holdT;
+cin.addEventListener('pointerdown',e=>{if(cin.value||V.on)return;holdT=setTimeout(()=>startVoice('mic',e),550)});
+cin.addEventListener('pointerleave',()=>clearTimeout(holdT));
+cin.addEventListener('input',()=>{composerState();clearTimeout(emoT);emoT=setTimeout(()=>renderEmojiRow(cin.value),250)});
+cin.addEventListener('keydown',e=>{if(e.key==='Enter')postComment()});
+// hold the comment icon on a video: record right there, no screen change
+let railHold=null,railUsed=false;
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('.rail .cmt');if(!b||V.on)return;railUsed=false;clearTimeout(railHold);
+  railHold=setTimeout(()=>{railUsed=true;startVoice('rail',e,b)},350)});
+// slide anywhere while holding → lock
+document.addEventListener('pointermove',e=>{if(V.on&&V.holding&&!V.locked&&Math.hypot(e.clientX-V.x0,e.clientY-V.y0)>40)lockVoice()});
+const release=()=>{clearTimeout(railHold);clearTimeout(holdT);if(V.on&&V.holding){V.holding=false;if(!V.locked)endVoice(true)}};
+document.addEventListener('pointerup',release);document.addEventListener('pointercancel',release);
+document.addEventListener('contextmenu',e=>{if(e.target.closest('.rail .cmt'))e.preventDefault()});
+
+/* drag sheets down to dismiss */
+$$('.sh-title').forEach(h=>{let y0=null,sh;h.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;y0=e.clientY;sh=h.closest('.sheet');sh.style.transition='none';h.setPointerCapture(e.pointerId)});
+  h.addEventListener('pointermove',e=>{if(y0==null)return;const dy=Math.max(0,e.clientY-y0);sh.style.transform=`translateY(${dy}px)`});
+  h.addEventListener('pointerup',e=>{if(y0==null)return;const dy=e.clientY-y0;y0=null;sh.style.transition='';sh.style.transform='';if(dy>90)closeSheets()})});
+
+/* share */
+function openShare(id){sheetVid=id;$('#shareActs').classList.toggle('hidden',!id);updateFavLbl();openSheet('share')}
+function updateFavLbl(){const on=sheetVid&&S.favVideos.has(sheetVid);$('#favLbl').innerHTML=on?'Remove from<br>Favorites':'Add to<br>Favorites';$('#favAct').classList.toggle('on',!!on)}
+function shareAct(k){
+  const v=vid(sheetVid);
+  if(k==='report'){closeSheets();toast('Thanks for reporting')}
+  if(k==='notint'){S.notint.add(v.id);closeSheets();toast('We’ll show fewer videos like this');setTimeout(()=>{$$(`#feedFY .video[data-id="${v.id}"]`).forEach(el=>el.remove())},300)}
+  if(k==='save'){closeSheets();toast('Saved to Photos')}
+  if(k==='duet'||k==='react'){closeSheets();openCamera(`${k==='duet'?'Duet':'React'} with @${v.user}`)}
+  if(k==='fav'){S.favVideos.has(v.id)?S.favVideos.delete(v.id):S.favVideos.add(v.id);updateFavLbl();toast(S.favVideos.has(v.id)?'Added to Favorites':'Removed from Favorites')}
+}
+
+/* ---------- sound page (Figma 2:602) ---------- */
+let soundVid;
+function openSound(id){
+  soundVid=id;const s=vid(id).sound;
+  $('#sTitle').textContent=s.t;$('#sArtist').textContent=s.a;$('#sCount').textContent=s.n;
+  $('#sGrid').innerHTML=Array.from({length:12},(_,i)=>`<div><img src="${A}album-${i+1}.png" alt=""><span class="views">▷ ${fmt(((i*7919)%900000)+1200)}</span></div>`).join('');
+  favSoundUI();openPage('sound');
+}
+function favSoundUI(){const on=S.favSounds.has(vid(soundVid).sound.t);$('#sFav').classList.toggle('on',on);$('#sFav span').textContent=on?'Added to Favorites':'Add to Favorites'}
+
+/* ---------- camera (Figma 2:477 / 2:434) ---------- */
+const CAM={rec:false,el:0,max:15,speed:1,segs:[],flip:false,beauty:false,filter:0,timer:false,flash:false,fx:0,int:null,stream:null,tpl:2,sound:null};
+const FILTERS=[['Normal','none'],['Vivid','saturate(1.6) contrast(1.1)'],['B&W','grayscale(1) contrast(1.15)'],['Warm','sepia(.35) saturate(1.3) hue-rotate(-10deg)'],['Cool','hue-rotate(20deg) saturate(1.2) brightness(1.05)']];
+const FX=[null,['✨','🌟','💫'],['💕','💖','❤️'],['❄️','❄️','☃️']];
+const TPLS=[['Travel Diary','tpl-photo-left.png'],['Seasons','album-6.png'],['My 2020','tpl-photo-main.png'],['Night Out','album-3.png'],['Best Friends','album-7.png'],['Pet Days','album-9.png']];
+function openCamera(sound){
+  Object.assign(CAM,{rec:false,el:0,segs:[],sound:sound||null});
+  $('#camSound').textContent=sound||'Sounds';
+  setMode(CAM.max===60?'60':'15');camUI();openPage('camera');
+}
+function setMode(m){
+  $$('#modes button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+  $('#tpl').classList.toggle('hidden',m!=='tpl');$('#vf').classList.toggle('hidden',m==='tpl');
+  if(m==='tpl'){renderTpl();return}
+  if(CAM.el===0)CAM.max=+m;else if(+m!==CAM.max)toast('Finish or delete your clips to change length');
+}
+function vfFilter(){const f=FILTERS[CAM.filter][1];$('#vfImg').style.filter=$('#vfVid').style.filter=(f==='none'?'':f)+(CAM.beauty?' brightness(1.08) contrast(.92) blur(.4px)':'')}
+function camUI(){
+  $('#recbtn').classList.toggle('rec',CAM.rec);
+  $('#tools').style.opacity=CAM.rec?0:1;$('#tools').style.pointerEvents=CAM.rec?'none':'';
+  const has=CAM.el>0&&!CAM.rec;
+  $('#camDel').classList.toggle('hidden',!has);$('#camOk').classList.toggle('hidden',!has);
+  $('#camUpload').classList.toggle('hidden',CAM.el>0);$$('.effects').forEach(e=>e.classList.toggle('hidden',CAM.rec));
+  $('#modes').style.visibility=CAM.rec?'hidden':'';
+  $('#recfill').style.width=(CAM.el/CAM.max*100)+'%';
+  $$('#recbar b').forEach(b=>b.remove());
+  CAM.segs.slice(0,-1).forEach(s=>{const b=document.createElement('b');b.style.left=(s/CAM.max*100)+'%';$('#recbar').appendChild(b)});
+  $('[data-k="flip"]').classList.toggle('on',CAM.flip);$('[data-k="beauty"]').classList.toggle('on',CAM.beauty);
+  $('[data-k="filters"]').classList.toggle('on',CAM.filter>0);$('[data-k="timer"]').classList.toggle('on',CAM.timer);
+  $('[data-k="flash"]').classList.toggle('on',CAM.flash);$('[data-k="speed"]').classList.toggle('on',CAM.speed!==1);
+}
+function bigLabel(t){const f=$('#flashbig');f.textContent=t;f.classList.add('on');clearTimeout(f._t);f._t=setTimeout(()=>f.classList.remove('on'),900)}
+function camTool(k){
+  if(k==='flip'){CAM.flip=!CAM.flip;$('#vf').classList.toggle('flip',CAM.flip)}
+  if(k==='speed'){const r=$('#speedrow');r.classList.toggle('hidden');r.innerHTML=[.3,.5,1,2,3].map(s=>`<button class="${s===CAM.speed?'on':''}" data-act="cam-speed" data-s="${s}">${s}x</button>`).join('')}
+  if(k==='beauty'){CAM.beauty=!CAM.beauty;vfFilter();bigLabel(CAM.beauty?'Beauty on':'Beauty off')}
+  if(k==='filters'){CAM.filter=(CAM.filter+1)%FILTERS.length;vfFilter();bigLabel(FILTERS[CAM.filter][0])}
+  if(k==='timer'){CAM.timer=!CAM.timer;bigLabel(CAM.timer?'3s timer':'Timer off')}
+  if(k==='flash'){CAM.flash=!CAM.flash;bigLabel(CAM.flash?'⚡ Flash on':'Flash off')}
+  camUI();
+}
+function camRec(){
+  if(CAM.rec){CAM.rec=false;clearInterval(CAM.int);CAM.segs.push(CAM.el);camUI();return}
+  if(CAM.el>=CAM.max)return;
+  const go=()=>{CAM.rec=true;camUI();CAM.int=setInterval(()=>{CAM.el=Math.min(CAM.max,CAM.el+.1/CAM.speed*1);$('#recfill').style.width=(CAM.el/CAM.max*100)+'%';if(CAM.el>=CAM.max){camRec();camDone()}},100)};
+  if(CAM.timer){const cd=$('#countdown');let n=3;cd.textContent=n;cd.classList.remove('hidden');const t=setInterval(()=>{n--;if(n>0)cd.textContent=n;else{clearInterval(t);cd.classList.add('hidden');go()}},800)}else go();
+}
+function camDel(){CAM.segs.pop();CAM.el=CAM.segs[CAM.segs.length-1]||0;camUI()}
+function camDone(){post({img:['camera-bg.png','album-8.png','album-11.png','tpl-photo-main.png'][S.posts.length%4],sound:CAM.sound,len:Math.round(CAM.el)})}
+function camEffects(){CAM.fx=(CAM.fx+1)%FX.length;const L=$('#fxLayer');L.innerHTML='';const set=FX[CAM.fx];bigLabel(set?'Effect: '+set[0]:'No effect');if(!set)return;
+  for(let i=0;i<16;i++){const s=document.createElement('span');s.textContent=set[i%set.length];s.style.left=Math.random()*95+'%';s.style.animationDuration=(4+Math.random()*4)+'s';s.style.animationDelay=(-Math.random()*6)+'s';L.appendChild(s)}}
+async function enableRealCam(){
+  try{CAM.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});const v=$('#vfVid');v.srcObject=CAM.stream;v.classList.remove('hidden');$('#vfImg').classList.add('hidden');vfFilter()}catch(e){toast('Camera unavailable — using preview')}
+}
+function stopCam(){clearInterval(CAM.int);CAM.rec=false;CAM.stream?.getTracks().forEach(t=>t.stop());CAM.stream=null;$('#vfVid').classList.add('hidden');$('#vfImg').classList.remove('hidden');$('#speedrow').classList.add('hidden')}
+function renderTpl(){
+  const n=TPLS.length;$('#tplName').textContent=TPLS[CAM.tpl][0];$('#tplIdx').textContent=`${CAM.tpl+1}/${n}`;
+  $('#tplCar').innerHTML=TPLS.map((t,i)=>{const d=i-CAM.tpl;return `<div class="card" data-act="tpl-go" data-i="${i}" style="transform:translateX(${d*271}px) scale(${d?0.9:1});opacity:${Math.abs(d)>1?0:1}"><img src="${A+t[1]}" alt="">${d?'':''}</div>`}).join('');
+}
+(()=>{let x0=null;const car=$('#tplCar');car.addEventListener('pointerdown',e=>x0=e.clientX);car.addEventListener('pointerup',e=>{if(x0==null)return;const dx=e.clientX-x0;x0=null;if(Math.abs(dx)>40){CAM.tpl=Math.max(0,Math.min(TPLS.length-1,CAM.tpl+(dx<0?1:-1)));renderTpl()}})})();
+
+/* photo picker */
+let picks=[];
+const PICK_IMGS=['album-1','album-2','album-3','album-4','album-5','album-6','album-7','album-8','album-9','album-10','album-11','album-12','me-thumb-1','me-thumb-2','me-thumb-3','me-thumb-4','tpl-photo-left','tpl-photo-main'];
+function openPicker(){picks=[];renderPicker();openPage('picker')}
+function renderPicker(){
+  $('#pgrid').innerHTML=PICK_IMGS.map(p=>{const i=picks.indexOf(p);return `<button class="${i>=0?'sel':''}" data-act="pick" data-p="${p}"><img src="${A+p}.png" alt=""><span class="num">${i>=0?i+1:''}</span></button>`}).join('');
+  $('#pickNext').disabled=!picks.length;$('#pickNext').textContent=picks.length?`Next (${picks.length})`:'Next';
+  $('#pickHint').textContent=picks.length?`${picks.length}/8 selected`:'Upload up to 8 photos';
+}
+
+/* posting + simulated activity */
+function post(p){
+  S.posts.unshift({id:'p'+Date.now(),views:0,...p});
+  closeAllPages();go('me');toast('Your video was posted');
+  const who=['zackjohn','mis_potter','fogchaser','maxjacobson'];
+  [[2500,'like',who[0]],[5000,'follow',who[1]],[7500,'comment',who[2]]].forEach(([ms,type,u])=>setTimeout(()=>{
+    S.notifs.unshift({u,type,img:p.img,t:Date.now()});if(type==='follow')S.followers++;if(type==='like')S.likes++;
+    if(S.tab!=='inbox')S.unread++;renderBadge();if(S.tab==='inbox')renderInbox();if(S.tab==='me')renderMe();
+  },ms));
+}
+function renderBadge(){const b=$('#inboxBadge');b.textContent=S.unread;b.classList.toggle('hidden',!S.unread)}
+
+/* ---------- inbox (Figma 2:380) ---------- */
+const FILTERS_IN=['All activity','Likes','Comments','Mentions','Followers'];
+function renderInbox(){
+  $('#inboxTitle').textContent=S.inboxFilter;
+  const map={Likes:'like',Comments:'comment',Followers:'follow',Mentions:'mention'};
+  const list=S.notifs.filter(n=>S.inboxFilter==='All activity'||n.type===map[S.inboxFilter]);
+  if(!list.length){$('#inboxBody').innerHTML=`<div class="empty" style="top:194.5px"><img src="${A}empty-notif.svg" width="66" height="68.35" alt=""><h5>Notifications aren’t available</h5><p>Notifications about your account will appear here</p></div>`;return}
+  const txt={like:'liked your video.',follow:'started following you.',comment:'commented: this is so good 🔥'};
+  $('#inboxBody').innerHTML=list.map(n=>`<div class="notif"><div class="nav">${avatar(n.u)}</div><div class="nt"><b>${esc(n.u)}</b> ${txt[n.type]}<time>${ago(n.t)}</time></div>${n.type==='follow'?`<button class="btn-red ${S.followed.has(n.u)?'done':''}" data-act="follow" data-user="${n.u}">${S.followed.has(n.u)?'Friends':'Follow back'}</button>`:`<img class="nth" src="${A+n.img}" alt="">`}</div>`).join('');
+}
+const ago=t=>{const s=Math.round((Date.now()-t)/1000);return s<60?s+'s':Math.round(s/60)+'m'};
+
+/* ---------- me (Figma 2:241) ---------- */
+function renderMe(){
+  const m=S.me;
+  $('#meName').textContent=m.name;$('#meHandle').textContent='@'+m.user;$('#meAv').src=A+m.photo;
+  $('#stFollowing').textContent=S.baseFollowing+S.followed.size;$('#stFollowers').textContent=S.followers;$('#stLikes').textContent=S.likes;
+  const bio=$('#meBio');bio.textContent=m.bio||'Tap to add bio';bio.classList.toggle('set',!!m.bio);
+  $('#ptabs').classList.toggle('liked',S.meTab==='liked');
+  const g=$('#meGrid'),wrap=$('#meGridWrap');$$('.bubble',wrap).forEach(b=>b.remove());
+  if(S.meTab==='liked'){
+    const l=ALLV.filter(v=>S.liked.has(v.id));
+    g.innerHTML=l.length?l.map(v=>`<button data-act="open-video" data-id="${v.id}"><img src="${A+v.img}" alt=""><span class="views">♥ ${fmt(v.likes+1)}</span></button>`).join(''):'';
+    if(!l.length)g.innerHTML=`<div style="grid-column:1/-1;height:200px;border:0;background:#fff;display:grid;place-items:center;color:var(--grey);font-size:14px">Videos you like will appear here</div>`;
+    return;
+  }
+  const own=S.posts.map(p=>`<button data-act="noop"><img src="${A+p.img}" alt=""><span class="mine-badge">${p.photos?p.photos+' photos':'New'}</span><span class="views">▷ ${p.views}</span></button>`);
+  const base=['me-thumb-1','me-thumb-2','me-thumb-3','me-thumb-4'].map(t=>`<button data-act="noop"><img src="${A+t}.png" alt=""><span class="views">▷ ${fmt(hue(t)*37)}</span></button>`);
+  g.innerHTML=own.concat(base).join('');
+  if(!S.posts.length){const b=document.createElement('button');b.className='bubble';b.dataset.act='create';b.style.top='258px';b.innerHTML=`<img class="bs" src="${A}bubble-shape.svg" alt=""><img class="bi" src="${A}bubble-illus.svg" alt=""><p class="p1">Tap to create</p><p class="p2">a new video</p>`;wrap.appendChild(b)}
+}
+
+/* ---------- edit profile (Figma 2:172) ---------- */
+const PHOTOS=['av-jacob.png','av-jacob-edit.png','av-maxjacobson.png'];
+function renderEP(){
+  const m=S.me,ch=`<img class="chev" src="${A}chevron-right.svg" alt="">`;
+  $('#epBody').innerHTML=`<div class="eav">
+      <button data-act="change-photo"><span class="ec"><img src="${A+m.photo}" alt="" style="filter:brightness(.7)"><img src="${A}camera-stroke.svg" width="27" height="21.5" alt=""></span>Change photo</button>
+      <button data-act="change-video"><span class="ec"><img src="${A}grey-circle-90.svg" alt=""><img src="${A}videocam-stroke.svg" width="30" height="22" alt=""></span>Change video</button>
+    </div>
+    <button class="row" data-act="ef" data-f="name">Name<span class="rv">${esc(m.name)}</span>${ch}</button>
+    <button class="row" data-act="ef" data-f="user">Username<span class="rv">${esc(m.user)}</span>${ch}</button>
+    <button class="row" data-act="copy-link"><span class="rv" style="margin-right:8px">tiktok.com@${esc(m.user)}</span><img src="${A}clipboard.svg" width="12.5" height="13" alt="" style="margin-right:-1px"></button>
+    <button class="row" data-act="ef" data-f="bio">Bio<span class="rv">${esc(m.bio||'Add a bio to your profile')}</span>${ch}</button>
+    <div class="sep" style="margin-top:8px;margin-bottom:8px"></div>
+    <button class="row" data-act="ef" data-f="ig">Instagram<span class="rv">${esc(m.ig||'Add Instagram to your profile')}</span>${ch}</button>
+    <button class="row" data-act="ef" data-f="yt">YouTube<span class="rv">${esc(m.yt||'Add YouTube to your profile')}</span>${ch}</button>`;
+}
+const FIELDS={name:['Name',30],user:['Username',24],bio:['Bio',80],ig:['Instagram',30],yt:['YouTube',30]};
+let edField;
+function openEditor(f){edField=f;const[t,max]=FIELDS[f];$('#edTitle').textContent=t;const i=$('#edInput');i.maxLength=max;i.value=S.me[f]||'';i.placeholder=t;edCount();openPage('editor');setTimeout(()=>i.focus({preventScroll:true}),320)}
+function edCount(){const i=$('#edInput');$('#edCnt').textContent=`${i.value.length}/${i.maxLength}`}
+$('#edInput').addEventListener('input',()=>{if(edField==='user')$('#edInput').value=$('#edInput').value.toLowerCase().replace(/[^a-z0-9._]/g,'');edCount()});
+$('#edInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveEditor()});
+function saveEditor(){const v=$('#edInput').value.trim();if((edField==='name'||edField==='user')&&!v){toast(FIELDS[edField][0]+' can’t be empty');return}S.me[edField]=v;store.set('me',S.me);closePage();renderEP();renderMe();toast('Saved')}
+
+/* ---------- settings (Figma 2:66) ---------- */
+function renderSettings(){
+  const r=(ic,w,h,t,k)=>`<button class="row" data-act="set" data-k="${k||t}"><span class="ri"><img src="${A}set-${ic}.svg" width="${w}" height="${h}" alt=""></span>${t}<img class="chev" src="${A}chevron-right.svg" alt=""></button>`;
+  $('#setBody').innerHTML=`<div class="sec">ACCOUNT</div>${r('account',14,16,'Manage my account')}${r('lock',14.5,17.5,'Privacy and safety')}${r('camera',19.25,14.5,'Content preferences')}${r('wallet',16.25,16,'Balance')}${r('share',17.59,15.58,'Share profile')}${r('qr',15.5,15.5,'TikCode')}
+  <div class="sep"></div><div class="sec">GENERAL</div>${r('bell',16,16.5,'Push notifications')}${r('book',16.5,18.5,'Language')}${r('umbrella',16.46,17,'Digital Wellbeing')}${r('access',18,18,'Accessibility')}${r('drop',15.5,18.37,'Data Saver')}
+  <div class="sep"></div><div class="sec">SUPPORT</div>${r('pen',15,16.81,'Report a problem')}${r('question',16,16,'Help Center')}<div style="height:40px"></div>`;
+}
+
+/* ---------- find friends (Figma 2:10) ---------- */
+function renderFF(q=''){
+  const ch=`<img class="chev" src="${A}chevron-right.svg" alt="">`;
+  const sug=recCreators('friend').filter(c=>!q||c.u.includes(q.toLowerCase()));
+  $('#ffBody').innerHTML=`<label class="ffsearch"><img src="${A}search-small.svg" width="14.32" height="14.82" alt=""><input id="ffq" placeholder="Search" value="${esc(q)}" autocomplete="off"></label>
+   ${q?'':`<button class="ffrow" data-act="ff" data-k="Invite friends"><span class="fi"><img src="${A}ff-invite-bg.svg" alt=""><img src="${A}ff-invite.svg" width="29" height="25" alt=""></span>Invite friends${ch}</button>
+   <button class="ffrow" data-act="ff" data-k="Find contacts"><span class="fi"><img src="${A}ff-contacts-bg.svg" alt=""><img src="${A}ff-phone.svg" width="20.93" height="20.81" alt=""></span>Find contacts${ch}</button>
+   <button class="ffrow" data-act="ff" data-k="Find Facebook friends"><span class="fi"><img src="${A}ff-facebook.svg" width="54" height="54" alt="" style="position:static"></span>Find Facebook friends${ch}</button>`}
+   <div class="sec">SUGGESTED ACCOUNTS</div>
+   ${sug.map(c=>`<div class="ffrow"><span class="fi" style="border-radius:50%;overflow:hidden">${avatar(c.u)}</span><span class="fu"><b>${esc(c.u)}</b><span>${c.why.replace(/<[^>]+>/g,'')}</span></span><button class="btn-red" data-act="follow" data-user="${c.u}">Follow</button></div>`).join('')||'<div class="dempty">No accounts found</div>'}`;
+  const i=$('#ffq');i.oninput=()=>{const p=i.selectionStart;renderFF(i.value);const n=$('#ffq');n.focus({preventScroll:true});n.setSelectionRange(p,p)};
+}
+
+/* ---------- DM (Figma 2:345) ---------- */
+function renderDM(){$('#dmBody').innerHTML=`<div class="empty" style="top:232px"><img src="${A}empty-dm.svg" width="70" height="61" alt=""><h5 style="margin-top:28px">Message your friends</h5><p style="color:var(--grey)">Share videos or start a conversation</p></div>`}
+
+/* ---------- TikCode QR (decorative, deterministic) ---------- */
+function drawQR(){
+  const c=$('#qrCanvas'),x=c.getContext('2d'),n=25,s=200/n;let h=hue(S.me.user)+1;
+  x.fillStyle='#fff';x.fillRect(0,0,200,200);
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++){h=(h*1103515245+12345)&0x7fffffff;if(h%2){x.fillStyle=(i+j)%7?'#161722':'#EA4359';x.fillRect(i*s,j*s,s,s)}}
+  [[0,0],[n-7,0],[0,n-7]].forEach(([a,b])=>{x.fillStyle='#fff';x.fillRect(a*s,b*s,7*s,7*s);x.fillStyle='#161722';x.fillRect(a*s,b*s,7*s,7*s);x.fillStyle='#fff';x.fillRect((a+1)*s,(b+1)*s,5*s,5*s);x.fillStyle='#161722';x.fillRect((a+2)*s,(b+2)*s,3*s,3*s)});
+  $('#qrName').textContent='@'+S.me.user;$('#qrAv').src=A+S.me.photo;
+}
+
+/* =================== DISCOVER (redesign) ===================
+   Instagram Explore: nothing from people you already follow, but related to them.
+   YouTube: creators who collaborated with / are similar to the ones you watch.
+   Trending is global; Searches for you get hyper-niche from your last watched videos. */
+let dQuery='',lastResults=[];
+const isCreator=u=>CREATORS[u]&&CREATORS[u].type!=='friend';
+function watchedTags(){const t={};S.history.slice(-8).forEach(id=>{const v=vid(id);v&&CREATORS[v.user]?.tags.forEach(x=>t[x]=(t[x]||0)+1)});return t}
+// kind 'creator' → Discover (creators only, never friends or people you follow); 'friend' → Find friends
+function recCreators(kind='creator'){
+  const fol=[...S.followed],wt=watchedTags(),recent=S.history.slice(-4).map(id=>vid(id)?.user);
+  return Object.keys(CREATORS).filter(u=>!S.followed.has(u)&&!S.dismissed.has(u)&&u!==S.me.user&&(kind==='friend'?CREATORS[u].type==='friend':isCreator(u))).map(u=>{
+    const c=CREATORS[u];let score=0,why=null;
+    if(recent.includes(u)){score+=4;why='You watched their video just now'}
+    for(const f of fol){const F=CREATORS[f];if(!F)continue;
+      if(c.collabs.includes(f)||F.collabs.includes(u)){score+=3;why=why||`Collabed with <b>@${f}</b>, who you follow`}
+      const sh=c.tags.filter(t=>F.tags.includes(t));if(sh.length){score+=sh.length;why=why||`Similar to <b>@${f}</b>`}
+    }
+    const w=c.tags.reduce((s,t)=>s+(wt[t]||0),0);if(w){score+=w*.8;why=why||`Makes ${c.tags[0]} videos like the ones you watch`}
+    return{u,score,why:why||'Popular right now',...c};
+  }).sort((a,b)=>b.score-a.score||a.u.localeCompare(b.u));
+}
+function myTags(){const t=watchedTags();S.followed.forEach(f=>CREATORS[f]?.tags.forEach(x=>t[x]=(t[x]||0)+1));return t}
+function recVideos(){return ALLV.filter(v=>!S.followed.has(v.user)&&!S.notint.has(v.id))}
+
+// trending topics, ranked for you: what you watch counts double, who you follow counts once
+const TRENDS=[
+  {q:'#stoicism',views:'4.2B',d:'38%',img:'following-bg.jpg',tags:['stoicism','philosophy']},
+  {q:'memento mori tattoos',views:'86M',d:'210%',img:'album-4.png',tags:['stoicism','discipline']},
+  {q:'reading Meditations',views:'140M',d:'64%',img:'album-1.png',tags:['stoicism','journaling']},
+  {q:'369 method',views:'1.1B',d:'120%',img:'album-5.png',tags:['manifestation','journaling']},
+  {q:'lucky girl syndrome',views:'3.6B',d:'15%',img:'album-7.png',tags:['manifestation','affirmations']},
+  {q:'shadow work journaling',views:'520M',d:'92%',img:'album-2.png',tags:['journaling','spirituality']},
+  {q:'full moon rituals',views:'310M',d:'48%',img:'album-6.png',tags:['manifestation','spirituality']},
+  {q:'Camus edits',views:'210M',d:'310%',img:'me-thumb-4.png',tags:['absurdism','philosophy']},
+  {q:'Nietzsche gym edits',views:'95M',d:'170%',img:'tpl-photo-main.png',tags:['existentialism','motivation']},
+  {q:'Alan Watts sleep talks',views:'640M',d:'44%',img:'me-thumb-3.png',tags:['spirituality','zen']},
+  {q:'dessert mukbang',views:'9.8B',d:'22%',img:'album-12.png',tags:['mukbang','dessert']},
+  {q:'LA matcha spots',views:'270M',d:'75%',img:'album-8.png',tags:['dessert','food','losangeles']},
+];
+function trendingForYou(){
+  const wt=watchedTags(),ft={};S.followed.forEach(f=>CREATORS[f]?.tags.forEach(t=>ft[t]=(ft[t]||0)+1));
+  const recent=[...S.history].reverse().map(vid).filter(Boolean);
+  return TRENDS.map((t,i)=>{
+    const score=t.tags.reduce((s,x)=>s+(wt[x]||0)*2+(ft[x]||0),0);
+    const w=recent.find(v=>CREATORS[v.user]?.tags.some(x=>t.tags.includes(x)));
+    const f=[...S.followed].find(u=>CREATORS[u]?.tags.some(x=>t.tags.includes(x)));
+    const why=w?`Because you watched @${w.user}`:f?`Popular with fans of @${f}`:'Rising near your interests';
+    return{...t,score:score-i*.01,why};
+  }).sort((a,b)=>b.score-a.score).slice(0,6);
+}
+// hyper-niche searches from what you watched last (newest first)
+function nicheSearches(){
+  const seen=[...new Set([...S.history].reverse())].map(vid).filter(v=>v&&v.niche);
+  const src=seen.length?seen:[VIDEOS[0]],out=[];
+  src.slice(0,2).forEach((v,i)=>v.niche.slice(0,i?2:3).forEach(q=>out.push({q,from:v})));
+  return{last:seen[0]||null,list:out};
+}
+const STOP=new Set('a an the for of in on to with and over as at by my your before i it is'.split(' '));
+function searchAll(q){
+  const toks=q.toLowerCase().replace(/[#@]/g,' ').split(/[\s-]+/).filter(t=>t&&!STOP.has(t)).map(t=>t.length>4?t.replace(/(es|s)$/,''):t);
+  const sc=txt=>{txt=txt.toLowerCase();return toks.reduce((s,t)=>s+(txt.includes(t)?1:0),0)};
+  const vids=ALLV.filter(v=>!S.notint.has(v.id)).map(v=>({v,s:sc([v.caption,v.quote||'',(v.niche||[]).join(' '),v.user,(CREATORS[v.user]?.tags||[]).join(' ')].join(' '))})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).map(x=>x.v);
+  const cs=Object.keys(CREATORS).filter(isCreator).map(u=>({u,s:sc(u+' '+CREATORS[u].name+' '+CREATORS[u].tags.join(' '))})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).map(x=>x.u);
+  return{vids,cs};
+}
+const PLAYLISTS=[
+  {title:'Stoicism in 60 seconds',by:'dailystoa',n:48,cover:'camera-bg.png',tags:['stoicism','discipline']},
+  {title:'30-day manifestation challenge',by:'manifest.with.mia',n:30,cover:'album-2.png',tags:['manifestation','journaling']},
+  {title:'Philosophy for overthinkers',by:'the.overthinkers.club',n:22,cover:'album-10.png',tags:['philosophy','absurdism']},
+  {title:'Alan Watts at night',by:'alan.watts.archive',n:64,cover:'album-6.png',tags:['spirituality','zen']},
+  {title:'Big questions on NYC streets',by:'socrates.cafe',n:17,cover:'me-thumb-2.png',tags:['existentialism','philosophy']},
+  {title:'Lucky girl mornings',by:'luckygirl.lena',n:26,cover:'album-9.png',tags:['manifestation','affirmations']},
+];
+function recPlaylists(){const m=myTags();return PLAYLISTS.filter(p=>!S.followed.has(p.by)).map(p=>({...p,score:p.tags.reduce((s,t)=>s+(m[t]||0),0)})).sort((a,b)=>b.score-a.score)}
+function miniAv(u){return `<span class="mini">${avatar(u)}</span>`}
+const followBtn=u=>S.followed.has(u)?'<button class="btn-red done" disabled>Following</button>':`<button class="btn-red" data-act="follow" data-user="${u}">Follow</button>`;
+
+function renderDiscover(){
+  const b=$('#dbody'),q=dQuery.trim();let h='';
+  if(q){
+    const r=searchAll(q);lastResults=r.vids.map(v=>v.id);
+    if(r.cs.length)h+=`<div class="dsec" style="padding-top:12px"><h4>Creators</h4>${r.cs.slice(0,3).map(u=>`<div class="ffrow"><span class="fi" style="border-radius:50%;overflow:hidden" data-act="open-creator" data-user="${u}">${avatar(u)}</span><span class="fu" data-act="open-creator" data-user="${u}"><b>${esc(CREATORS[u].name)}</b><span>@${esc(u)} · ${CREATORS[u].fans} followers</span></span>${followBtn(u)}</div>`).join('')}</div>`;
+    h+=r.vids.length?`<div class="dsec"><h4>Videos<small>${r.vids.length} results</small></h4><div class="mosaic">${r.vids.map(v=>tile(v)).join('')}</div></div>`:`<div class="dempty">No results for “${esc(q)}”</div>`;
+    b.innerHTML=h+'<div style="height:24px"></div>';return;
+  }
+  h+=`<div class="dsec"><h4>Trending for you</h4><div class="why">Rising in the topics you watch and follow</div><div style="margin-top:6px">${trendingForYou().map((t,i)=>`<button class="trend" data-act="search" data-q="${esc(t.q)}"><span class="rk">${i+1}</span><span class="tt"><b>${esc(t.q)}</b><span>${esc(t.why)} · <span class="up">↑ ${t.d}</span></span></span><img src="${A+t.img}" alt=""></button>`).join('')}</div></div>`;
+  const ns=nicheSearches();
+  h+=`<div class="dsec"><h4>Searches for you</h4>${ns.last?`<div class="watched"><img src="${A+ns.last.img}" alt=""><span>Because you just watched <b>@${esc(ns.last.user)}</b></span></div>`:`<div class="why">Based on what you watch on For You</div>`}
+    ${ns.list.map(s=>`<button class="nsearch" data-act="search" data-q="${esc(s.q)}"><span class="q">${esc(s.q)}</span><span class="arr" data-act="fill-search" data-q="${esc(s.q)}" aria-label="Edit search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#86878B" stroke-width="2.2" stroke-linecap="round"><path d="M18 18 6 6M6 15V6h9"/></svg></span></button>`).join('')}</div>`;
+  h+=`<div class="dsec"><h4>Playlists from creators</h4><div class="why">Series from creators close to your taste</div><div style="margin-top:6px">${recPlaylists().map(p=>`<button class="plrow" data-act="open-playlist" data-by="${p.by}" data-t="${esc(p.title)}"><img src="${A+p.cover}" alt=""><span class="pli"><b>${esc(p.title)}</b><span class="plu">${miniAv(p.by)}@${esc(p.by)}</span><span class="pln">${p.n} posts</span></span></button>`).join('')}</div></div>`;
+  b.innerHTML=h+'<div style="height:24px"></div>';
+}
+function tile(v){return `<button data-act="open-video" data-id="${v.id}"><img src="${A+v.img}" alt=""><span class="tlbl">${miniAv(v.user)}${esc(v.user)} · ♥ ${fmt(v.likes)}</span></button>`}
+function runSearch(q){dQuery=q;$('#dq').value=q;renderDiscover();$('#dbody').scrollTop=0}
+/* ---------- creator profile with playlists (Figma 10-1069) ---------- */
+const QPOOL={
+  stoicism:['memento mori','the obstacle is the way','discipline is freedom','6am routine','journal with me','book notes: meditations','control what you can','amor fati','cold shower day 30'],
+  manifestation:['369 method day 1','scripting my dream life','lucky girl era','vision board with me','manifesting a calm week','affirmations for exams','full moon intentions','gratitude list','it’s already mine'],
+  philosophy:['why are we here?','Camus in 60s','Sisyphus was happy','Nietzsche explained','is free will real?','overthinking, explained','the absurd','reading Kierkegaard','big questions'],
+  spirituality:['you are the universe','let it go','the real you','sleep talk','listen with eyes closed','ego, explained','nothing to do','be here now','rain + Alan'],
+  mukbang:['matcha mille crêpe','LA hidden bakery','cheesecake ASMR','night market sweets','churros at 2am','mochi taste test','strawberry tart','ube everything','dessert crawl'],
+  _:['day in my life','rainy day vlog','reset day','solo date day','new apartment','get ready with me','weekend notes','what I eat','city walk'],
+};
+const IMGPOOL=['album-1.png','album-2.png','album-3.png','album-4.png','album-5.png','album-6.png','album-7.png','album-8.png','album-9.png','album-10.png','album-11.png','album-12.png','me-thumb-1.png','me-thumb-2.png','me-thumb-3.png','me-thumb-4.png','tpl-photo-left.png','tpl-photo-main.png','following-bg.jpg','camera-bg.png'];
+const EXTRA_PL=['home','Favorites','Q&A','Book club','Routines'];
+function poolFor(u){const t=CREATORS[u]?.tags||[];if(t.includes('mukbang'))return QPOOL.mukbang;if(t.includes('stoicism'))return QPOOL.stoicism;if(t.includes('manifestation'))return QPOOL.manifestation;if(t.some(x=>['zen','spirituality'].includes(x)))return QPOOL.spirituality;if(t.some(x=>['philosophy','absurdism','existentialism'].includes(x)))return QPOOL.philosophy;return QPOOL._}
+const crCache={};
+function creatorVideos(u){
+  if(crCache[u])return crCache[u];
+  const real=ALLV.filter(v=>v.user===u),qs=poolFor(u),tags=(CREATORS[u]?.tags||[]).slice(0,2).map(t=>'#'+t).join(' ');let h=hue(u)+3;
+  const gen=Array.from({length:Math.max(0,12-real.length)},(_,i)=>{h=(h*37+17)%9973;
+    const v={id:`g-${u}-${i}`,user:u,date:`10-${String(26-i).padStart(2,'0')}`,caption:`${qs[i%qs.length]} ${tags}`,quote:qs[i%qs.length],img:IMGPOOL[h%IMGPOOL.length],sound:{t:'original sound',a:u,n:'1,024 videos'},likes:h*53%400000+900,comments:h%900+12,dur:11};
+    ALLV.push(v);return v});
+  return crCache[u]=[...real,...gen];
+}
+function creatorPlaylists(u){const own=PLAYLISTS.filter(p=>p.by===u).map(p=>p.title);return [...own,...EXTRA_PL.filter(x=>!own.includes(x))].slice(0,Math.max(3,own.length+2))}
+const viewsOf=v=>v.views||(v.likes*7+hue(v.id)%900);
+const CR={u:null,pl:-1,tab:'posts'};
+function openCreator(u,plTitle){
+  if(!u||u===S.me.user){go('me');return}
+  CR.u=u;CR.tab='posts';const pls=creatorPlaylists(u);CR.pl=plTitle?pls.indexOf(plTitle):-1;
+  renderCreator();openPage('creator');$('#crBody').scrollTop=0;
+}
+function renderCreator(){
+  const u=CR.u,c=CREATORS[u]||{name:u,tags:[],fans:'1K'},h=hue(u),fol=S.followed.has(u),pls=creatorPlaylists(u);
+  const list=creatorVideos(u);
+  const bio=c.bio||[`${c.tags.slice(0,3).join(' · ')}`,['LA','NYC','SF','London'][h%4],`https://linktr.ee/${u.replace(/[._]/g,'')}`];
+  const play='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M10 8.5v7l5.5-3.5z" fill="currentColor" stroke="none"/></svg>';
+  const tri='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"><path d="M7 4.5v15l12-7.5z"/></svg>';
+  const jw=[...S.history].reverse().find(id=>list.some(v=>v.id===id));
+  $('#crBody').innerHTML=`<div class="crhead">
+      <div class="crname">${esc(c.name.split(' ·')[0])}</div><div class="crhandle">@${esc(u)}</div>
+      <div class="crstats"><div><b>${fmt(h%900+24)}</b><span>Following</span></div><div><b>${esc(c.fans)}</b><span>Followers</span></div><div><b>${fmt((h*7919)%9000000+120000)}</b><span>Likes</span></div></div>
+      <div class="crav">${avatar(u)}</div>
+    </div>
+    <div class="crbtns"><button class="fol ${fol?'done':''}" data-act="cr-follow">${fol?'Following':'Follow'}</button><button class="msg" data-act="cr-msg">Message</button>
+      <button class="add" data-act="cr-suggest" aria-label="Suggested accounts"><svg width="20" height="20" viewBox="0 0 24 24" fill="#161722"><circle cx="9" cy="8" r="4"/><path d="M1.5 20c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5z"/><path d="M19 7v6M16 10h6" stroke="#161722" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+    <div class="crbio">${bio.map((l,i)=>i===bio.length-1&&/^https?:/.test(l)?`<b>${esc(l)}</b>`:esc(l)).join('<br>')}</div>
+    <div class="crtabs"><button class="${CR.tab==='posts'?'on':''}" data-act="cr-tab" data-v="posts" aria-label="Videos"><svg width="30" height="20" viewBox="0 0 30 20" fill="currentColor"><rect x="1" y="2" width="2.6" height="16" rx="1"/><rect x="7" y="2" width="2.6" height="16" rx="1"/><rect x="13" y="2" width="2.6" height="16" rx="1"/><path d="M21 9h7l-3.5 4z"/></svg></button>
+      <button class="${CR.tab==='reposts'?'on':''}" data-act="cr-tab" data-v="reposts" aria-label="Reposts"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg></button></div>
+    ${CR.tab==='reposts'?`<div class="dempty">@${esc(u)} hasn’t reposted anything yet</div>`:`
+    <div class="plchips">${pls.map((p,i)=>`<button class="${i===CR.pl?'on':''}" data-act="cr-pl" data-i="${i}">${play}${esc(p)}</button>`).join('')}</div>
+    <div class="crgrid">${list.map(v=>`<button data-act="cr-video" data-id="${v.id}" class="${v.id===jw?'jw':''}"><img src="${A+v.img}" alt="">${v.quote?`<span class="tq">${esc(v.quote.split('\n')[0].replace(/[“”]/g,''))}</span>`:''}<span class="vw">${tri}${fmt(viewsOf(v))}</span></button>`).join('')}</div>`}
+    <div style="height:80px"></div>`;
+  $('#justW').classList.toggle('hidden',!jw||CR.tab!=='posts');
+}
+const PLV={pl:null,saved:new Set()};
+function openViewer(ids,ctx,pl=null,start=0){
+  const f=$('#viewerFeed');f.innerHTML=ids.map(id=>videoHTML(vid(id))).join('');$('#vctx').textContent=ctx||'';
+  PLV.pl=pl;$('#viewer').classList.toggle('haspl',!!pl);$('#plbar').classList.toggle('hidden',!pl);closePlSheet();
+  if(pl){$('#plbarT').textContent=pl.title;$('#plbarN').textContent=`· ${pl.ids.length} posts`}
+  openPage('viewer');observe(f);f.scrollTop=start*f.clientHeight;
+}
+/* playlist sheet (Figma 12-1071) */
+const plDur=v=>`00:${String(hue(v.id)%50+9).padStart(2,'0')}`;
+function openPlaylist(u,i,startId,sheet=true){
+  const pls=creatorPlaylists(u),ids=creatorVideos(u).filter((v,j)=>j%pls.length===i).map(v=>v.id);
+  CR.pl=i;if($('#creator').classList.contains('open'))renderCreator();
+  openViewer(ids,pls[i],{u,title:pls[i],ids},Math.max(0,ids.indexOf(startId)));
+  if(sheet)setTimeout(openPlSheet,60);
+}
+function openPlSheet(){
+  const pl=PLV.pl;if(!pl)return;
+  const cur=$('#viewerFeed .video.current')?.dataset.id,last=[...S.history].reverse().find(id=>pl.ids.includes(id));
+  $('#plT').textContent=pl.title;$('#plN').textContent=`${pl.ids.length} posts`;
+  $('#plSave svg path').setAttribute('fill',PLV.saved.has(pl.u+pl.title)?'#161722':'none');
+  $('#plList').innerHTML=pl.ids.map((id,i)=>{const v=vid(id);return `<button class="plpost ${id===cur?'cur':''}" data-act="pl-play" data-i="${i}"><img src="${A+v.img}" alt=""><span class="pp"><span class="cap"><b>Post ${i+1}</b><i>|</i>${esc(v.caption)}</span><span class="m2" style="display:block">${plDur(v)} · ${fmt(viewsOf(v))} views${id===last?'<span class="lw">Last watched</span>':''}</span></span></button>`}).join('');
+  $('#plback').classList.add('on');$('#plsheet').classList.add('open');
+  $('#plList .cur')?.scrollIntoView({block:'nearest'});
+}
+function closePlSheet(){$('#plback').classList.remove('on');$('#plsheet').classList.remove('open')}
+$('#dq').addEventListener('input',e=>{dQuery=e.target.value;renderDiscover()});
+
+/* =================== event dispatch =================== */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]');if(!t)return;
+  const a=t.dataset.act,d=t.dataset;
+  switch(a){
+    case 'tab':closeAllPages();if(d.v===S.tab&&d.v==='home'){$('#feed'+(S.feed==='fy'?'FY':'FL')).scrollTo({top:0,behavior:'smooth'})}go(d.v);break;
+    case 'create':openCamera();break;
+    case 'feedtab':setFeed(d.v);break;
+    case 'tap':onTap(t,e);break;
+    case 'follow':follow(d.user);if(S.tab==='discover'){const card=t.closest('.hcard');if(card){card.classList.add('gone');setTimeout(renderDiscover,350)}else setTimeout(renderDiscover,250)}if(S.feed==='fl'&&t.closest('.empty-follow'))setTimeout(renderFL,400);if(t.closest('#ffBody'))setTimeout(()=>renderFF($('#ffq')?.value||''),300);if(S.tab==='inbox')renderInbox();break;
+    case 'avatar':case 'open-creator':openCreator(d.user);break;
+    case 'cr-follow':if(S.followed.has(CR.u)){S.followed.delete(CR.u);saveFollowed();$$(`.follow[data-user="${CR.u}"]`).forEach(b=>b.classList.remove('done'))}else follow(CR.u);renderCreator();if(S.tab==='discover')renderDiscover();break;
+    case 'cr-msg':toast('Message @'+CR.u);break;
+    case 'cr-suggest':toast('Accounts similar to @'+CR.u);break;
+    case 'cr-bell':toast('You’ll be notified when @'+CR.u+' posts');break;
+    case 'cr-share':openShare(null);break;
+    case 'cr-tab':CR.tab=d.v;renderCreator();break;
+    case 'cr-pl':openPlaylist(CR.u,+d.i);break;
+    case 'cr-video':{const ids=creatorVideos(CR.u).map(v=>v.id);openViewer(ids,'@'+CR.u,null,ids.indexOf(d.id));break}
+    case 'pl-open':openPlSheet();break;
+    case 'pl-close':closePlSheet();break;
+    case 'pl-play':{closePlSheet();const f=$('#viewerFeed'),el=$$('.video',f)[+d.i];f.scrollTop=el.offsetTop;setCurrent(f,el);break}
+    case 'pl-save':{const k=PLV.pl.u+PLV.pl.title,on=!PLV.saved.has(k);on?PLV.saved.add(k):PLV.saved.delete(k);$('#plSave svg path').setAttribute('fill',on?'#161722':'none');toast(on?'Playlist saved':'Removed from saved');break}
+    case 'pl-share':openShare(null);break;
+    case 'just-watched':{const b=$('#crBody .crgrid .jw');if(b){b.scrollIntoView({block:'center',behavior:'smooth'});b.classList.remove('pulse');void b.offsetWidth;b.classList.add('pulse')}break}
+    case 'like':toggleLike(d.id);break;
+    case 'comments':if(railUsed){railUsed=false;break}openComments(d.id);break;
+    case 'voice-stop':endVoice(true);break;
+    case 'voice-cancel':endVoice(false);break;
+    case 'share':openShare(d.id);break;
+    case 'sound':openSound(d.id);break;
+    case 'close-sheets':closeSheets();break;
+    case 'clike':{const c=findComment(d.cid);c.liked=!c.liked;renderComments();break}
+    case 'replies':{const c=findComment(d.cid);c.open=!c.open;if(!c.replies){let h=hue(c.id);c.replies=Array.from({length:c.rep},(_,i)=>{h=(h*31+7)%991;return{id:c.id+'r'+i,u:UPOOL[h%UPOOL.length],t:RPOOL[(h+i)%RPOOL.length],time:((h%9)+1)+'h',likes:h%300,reacts:[]}})}renderComments();break}
+    case 'react':{const c=findComment(d.cid);if(!c.reacts.includes(d.e))c.reacts.push(d.e);countEmoji(d.e);hideReact();renderComments();toast('Reacted '+d.e);break}
+    case 'emoji':insertAtCursor(d.e);break; // counted when the comment is posted
+    case 'emo-focus':$('#emoRow').scrollLeft=0;$('#cInput').focus();break;
+    case 'at':insertAtCursor('@');break;
+    case 'post-comment':postComment();break;
+    case 'share-to':closeSheets();toast('Shared via '+d.n);break;
+    case 'share-act':shareAct(d.k);break;
+    case 'back':closePage();break;
+    case 'share-sound':openShare(null);break;
+    case 'sound-fav':{const k=vid(soundVid).sound.t;S.favSounds.has(k)?S.favSounds.delete(k):S.favSounds.add(k);favSoundUI();break}
+    case 'use-sound':{const s=vid(soundVid).sound;openCamera(`${s.a} - ${s.t}`);break}
+    case 'cam-close':closePage();break;
+    case 'cam-tool':camTool(d.k);break;
+    case 'cam-speed':CAM.speed=+d.s;$('#speedrow').classList.add('hidden');bigLabel(d.s+'x');camUI();break;
+    case 'cam-rec':camRec();break;
+    case 'cam-del':camDel();break;
+    case 'cam-done':camDone();break;
+    case 'cam-mode':if(!CAM.rec)setMode(d.m);break;
+    case 'cam-upload':openPicker();break;
+    case 'cam-effects':camEffects();break;
+    case 'cam-sounds':{const list=VIDEOS.map(v=>`${v.sound.a} - ${v.sound.t}`);const i=(list.indexOf(CAM.sound)+1)%list.length;CAM.sound=list[i];$('#camSound').textContent=CAM.sound;toast('♫ '+CAM.sound);break}
+    case 'tpl-go':CAM.tpl=+d.i;renderTpl();break;
+    case 'tpl-select':openPicker();break;
+    case 'pick':{const i=picks.indexOf(d.p);if(i>=0)picks.splice(i,1);else if(picks.length>=8)toast('You can select up to 8 photos');else picks.push(d.p);renderPicker();break}
+    case 'pick-next':post({img:picks[0]+'.png',photos:picks.length,sound:CAM.sound});break;
+    case 'inbox-filter':{const dd=$('#inboxDD');const on=!dd.classList.contains('on');dd.innerHTML=FILTERS_IN.map(f=>`<button class="${f===S.inboxFilter?'on':''}" data-act="inbox-opt" data-v="${f}">${f}</button>`).join('');dd.classList.toggle('on',on);$('#inboxCaret').classList.toggle('up',on);break}
+    case 'inbox-opt':S.inboxFilter=d.v;$('#inboxDD').classList.remove('on');$('#inboxCaret').classList.remove('up');renderInbox();break;
+    case 'dm':renderDM();openPage('dmpage');break;
+    case 'dm-new':toast('Choose a friend to message');break;
+    case 'me-tab':S.meTab=d.v;renderMe();break;
+    case 'edit-profile':renderEP();openPage('editprofile');break;
+    case 'ef':if(!$('#editprofile').classList.contains('open')){renderEP();openPage('editprofile')}openEditor(d.f);break;
+    case 'editor-save':saveEditor();break;
+    case 'change-photo':{const i=(PHOTOS.indexOf(S.me.photo)+1)%PHOTOS.length;S.me.photo=PHOTOS[i];store.set('me',S.me);renderEP();renderMe();toast('Profile photo updated');break}
+    case 'change-video':toast('Profile videos: record up to 6s');openCamera('Profile video');break;
+    case 'copy-link':navigator.clipboard?.writeText('tiktok.com/@'+S.me.user).catch(()=>{});toast('Link copied');break;
+    case 'settings':renderSettings();openPage('settings');break;
+    case 'set':if(d.k==='TikCode'){drawQR();$('#qrModal').classList.add('on')}else if(d.k==='Share profile')openShare(null);else toast(d.k);break;
+    case 'findfriends':renderFF();openPage('findfriends');break;
+    case 'ff':toast(d.k);break;
+    case 'favorites':toast(`${S.favVideos.size} videos · ${S.favSounds.size} sounds in Favorites`);break;
+    case 'scan':openPage('scan');break;
+    case 'scan-photos':toast('No QR code found in that photo');break;
+    case 'tikcode':drawQR();$('#qrModal').classList.add('on');break;
+    case 'close-modal':if(e.target===t||t.tagName==='BUTTON')$('#qrModal').classList.remove('on');break;
+    case 'search':runSearch(d.q);break;
+    case 'fill-search':e.stopPropagation();runSearch(d.q);$('#dq').focus({preventScroll:true});break;
+    case 'dismiss':S.dismissed.add(d.user);t.closest('.hcard').classList.add('gone');setTimeout(renderDiscover,300);toast('We’ll suggest fewer like this');break;
+    case 'open-video':{const pool=dQuery.trim()?lastResults:recVideos().map(v=>v.id);openViewer([d.id,...pool.filter(x=>x!==d.id)].slice(0,10),dQuery.trim()?`“${dQuery.trim()}”`:'Discover');break}
+    case 'open-playlist':openCreator(d.by,d.t);setTimeout(()=>openPlaylist(d.by,CR.pl),320);break;
+  }
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if($('#qrModal').classList.contains('on'))$('#qrModal').classList.remove('on');else if($('.sheet.open'))closeSheets();else closePage()}
+  if((e.key==='ArrowDown'||e.key==='ArrowUp')&&S.tab==='home'&&!stack.length&&!$('.sheet.open')){const f=$('#feed'+(S.feed==='fy'?'FY':'FL'));f.scrollBy({top:(e.key==='ArrowDown'?1:-1)*f.clientHeight,behavior:'smooth'});e.preventDefault()}
+});
+// double-tap the viewfinder to try the real camera
+$('#vf').addEventListener('dblclick',e=>{if(!e.target.closest('button'))enableRealCam()});
+
+/* fit the 414×896 phone into desktop windows */
+function fit(){if(innerWidth<=500){phone.style.transform='';return}const k=Math.min(1,(innerHeight-40)/896,(innerWidth-40)/414);phone.style.transform=`scale(${k})`}
+addEventListener('resize',fit);fit();
+phone.addEventListener('scroll',()=>{phone.scrollLeft=0;phone.scrollTop=0}); // never let focus scroll the frame
+
+renderFY();chrome();
+</script>
+</body>
+</html>

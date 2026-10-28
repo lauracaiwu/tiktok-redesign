@@ -180,6 +180,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 .reactpop.on{transform:translate(-50%,0) scale(1);opacity:1;pointer-events:auto}
 .reactpop button{font-size:32px;line-height:1;transition:transform .12s}
 .reactpop button:active{transform:scale(1.25)}
+.reactpop .del{display:grid;place-items:center;padding-left:14px;border-left:1px solid var(--line2)}
 .reactpop .lbl{position:absolute;left:0;right:0;top:-20px;text-align:center;font-size:11px;font-weight:600;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
 
 /* comment composer: most-used emoji + voice */
@@ -197,6 +198,15 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 .composer.recording .vpill{display:flex}
 .composer.recording .at,.composer.recording .emo,.composer.recording .post{display:none!important}
 .composer.recording input{color:var(--grey)}
+.composer .vlock{display:none;position:absolute;right:8px;top:-40px;align-items:center;gap:5px;height:28px;padding:0 11px;border-radius:14px;background:rgba(22,23,34,.88);color:#fff;font-size:12px;font-weight:600;white-space:nowrap;pointer-events:none;animation:vlockIn .2s ease-out}
+.composer.recording:not(.locked) .vlock{display:flex}
+@keyframes vlockIn{from{opacity:0;transform:translateY(6px)}}
+.composer .mic{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.replybar{display:none;flex:none;align-items:center;justify-content:space-between;padding:8px 12px 8px 16px;background:var(--field);font-size:13px;color:var(--grey)}
+.replybar.on{display:flex}
+.replybar b{color:var(--label);font-weight:600}
+.replybar button{width:24px;height:24px;font-size:18px;color:var(--grey)}
+.c .crep{font-size:13px;font-weight:600;color:var(--grey);margin-left:12px}
 .composer.locked .vx{display:grid;background:var(--field);border-radius:50%;font-size:18px;color:var(--label)}
 .composer.locked .mic{background:#000;border-radius:50%}
 .composer.locked .mic .mi{display:none}
@@ -864,6 +874,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
       <div class="clist" id="clist"></div>
       <div class="reactpop" id="reactpop"></div>
     </div>
+    <div class="replybar" id="replyBar"><span>Replying to <b id="replyTo"></b></span><button data-act="reply-cancel" aria-label="Cancel reply">×</button></div>
     <div class="emo-row" id="emoRow"></div>
     <div class="foot">
       <div class="composer" id="composer">
@@ -874,6 +885,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
           <svg class="mi" viewBox="0 0 24 24" fill="none" stroke="#161722" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
           <i class="sq"></i>
         </button>
+        <span class="vlock" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Slide to lock 🔒</span>
         <button class="ib at" data-act="at" aria-label="Mention"><img src="assets/at-icon.svg" alt=""></button>
         <button class="ib emo" data-act="emo-focus" aria-label="Emoji"><img src="assets/emoji-icon.svg" alt=""></button>
         <button class="post" data-act="post-comment">Post</button>
@@ -1189,7 +1201,7 @@ function cHTML(c,reply){
     <div class="cav">${mine?`<img src="${A+S.me.photo}" alt="">`:avatar(c.u)}</div>
     <div class="cb">
       <div class="cu">${esc(c.u)}${CREATORS[c.u]?.verified?`<img src="${A}verified-tick.svg" alt="">`:''}${sheetVid&&vid(sheetVid).user===c.u?'<span class="tag">· Creator</span>':''}</div>
-      <div class="ct">${esc(c.t)}<time>${esc(c.time)}</time></div>
+      <div class="ct">${esc(c.t)}<time>${esc(c.time)}</time><button class="crep" data-act="reply" data-cid="${c.id}">Reply</button></div>
       ${c.reacts.length?`<div class="reacts">${c.reacts.join('')}</div>`:''}
       ${!reply&&c.rep?`<button class="rep ${c.open?'open':''}" data-act="replies" data-cid="${c.id}">${c.open?'Hide replies':`View replies (${c.rep})`}<img src="${A}chevron-down-small.svg" alt=""></button>`:''}
     </div>
@@ -1202,10 +1214,40 @@ function renderComments(){
   $('#clist').innerHTML=list.map(c=>cHTML(c)+(c.open?c.replies.map(r=>cHTML(r,true)).join(''):'')).join('');
 }
 function findComment(cid){for(const k in COMMENTS)for(const c of COMMENTS[k]){if(c.id===cid)return c;for(const r of c.replies||[])if(r.id===cid)return r}}
-function openComments(id){sheetVid=id;renderComments();renderEmojiRow();$('#clist').scrollTop=0;openSheet('comments')}
+function openComments(id){sheetVid=id;cancelReply();renderComments();renderEmojiRow();$('#clist').scrollTop=0;openSheet('comments')}
+/* replies: tap Reply on any comment, the composer targets that thread */
+let replyTo=null;
+function ensureReplies(c){if(!c.replies){let h=hue(c.id);c.replies=Array.from({length:c.rep},(_,i)=>{h=(h*31+7)%991;return{id:c.id+'r'+i,u:UPOOL[h%UPOOL.length],t:RPOOL[(h+i)%RPOOL.length],time:((h%9)+1)+'h',likes:h%300,reacts:[]}})}return c.replies}
+const threadOf=cid=>commentsFor(sheetVid).find(c=>c.id===cid||(c.replies||[]).some(r=>r.id===cid));
+function startReply(cid){
+  const c=findComment(cid);if(!c)return;replyTo=cid;
+  $('#replyTo').textContent='@'+c.u;$('#replyBar').classList.add('on');
+  cin.placeholder=`Reply to ${c.u}...`;cin.focus({preventScroll:true});
+}
+function deleteComment(cid){
+  const list=commentsFor(sheetVid),th=threadOf(cid);if(!th)return;
+  let n=1;
+  if(th.id===cid){n+=th.rep||0;list.splice(list.indexOf(th),1)} // replies go with it
+  else{th.replies=th.replies.filter(r=>r.id!==cid);th.rep=Math.max(0,th.rep-1)}
+  if(replyTo===cid)cancelReply();
+  const v=vid(sheetVid);v.comments=Math.max(0,v.comments-n);refreshVideoUI(sheetVid);
+  hideReact();renderComments();toast('Comment deleted');
+}
+function cancelReply(){replyTo=null;$('#replyBar').classList.remove('on');cin.placeholder='Add comment... '}
 function postComment(){
   const i=$('#cInput'),t=i.value.trim();if(!t)return;
   countEmoji(t);
+  if(replyTo){
+    const tc=findComment(replyTo),th=threadOf(replyTo);
+    if(th){
+      const r={id:'m'+Date.now(),u:S.me.user,t:th.id!==replyTo&&tc.u!==S.me.user?`@${tc.u} ${t}`:t,time:'now',likes:0,reacts:[],fresh:true};
+      ensureReplies(th).push(r);th.rep=(th.rep||0)+1;th.open=true;
+      vid(sheetVid).comments++;refreshVideoUI(sheetVid);
+      i.value='';composerState();cancelReply();renderComments();renderEmojiRow();
+      $(`#clist [data-cid="${r.id}"]`)?.scrollIntoView({block:'nearest'});
+      setTimeout(()=>r.fresh=false,600);return;
+    }
+  }
   const list=commentsFor(sheetVid);
   list.unshift({id:'m'+Date.now(),u:S.me.user,t,time:'now',likes:0,rep:0,reacts:[],fresh:true});
   vid(sheetVid).comments++;refreshVideoUI(sheetVid);
@@ -1234,7 +1276,9 @@ $('#clist').addEventListener('pointerdown',e=>{
 $('#clist').addEventListener('scroll',()=>{clearTimeout(pressT);pressEl?.classList.remove('pressing');hideReact()});
 function showReact(c){
   const pop=$('#reactpop'),body=c.closest('.body');
-  pop.innerHTML=`<span class="lbl"></span>`+topEmoji(5).map(e=>`<button data-act="react" data-e="${e}" data-cid="${c.dataset.cid}">${e}</button>`).join('');
+  const own=findComment(c.dataset.cid)?.u===S.me.user;
+  pop.innerHTML=`<span class="lbl"></span>`+topEmoji(5).map(e=>`<button data-act="react" data-e="${e}" data-cid="${c.dataset.cid}">${e}</button>`).join('')
+    +(own?`<button class="del" data-act="del-comment" data-cid="${c.dataset.cid}" aria-label="Delete comment"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FE2C55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>`:'');
   const top=c.offsetTop-$('#clist').scrollTop+$('#clist').offsetTop-62;
   pop.style.top=Math.max(4,top)+'px';pop.classList.add('on');
   navigator.vibrate?.(10);
@@ -1261,7 +1305,7 @@ function vChrome(){
   const rail=V.src==='rail',c=$('#composer');
   vRail.classList.toggle('on',V.on&&rail);vRail.classList.toggle('locked',V.on&&V.locked);
   c.classList.toggle('recording',V.on&&!rail);c.classList.toggle('locked',V.on&&!rail&&V.locked);
-  cin.placeholder=V.on&&!rail?(V.locked?'Listening… tap ■ when done':'Listening… slide to lock'):'Add comment... ';
+  cin.placeholder=V.on&&!rail?(V.locked?'Listening… tap ■ when done':'Listening… slide to lock'):replyTo?`Reply to ${findComment(replyTo)?.u}...`:'Add comment... ';
 }
 function placeRail(btn){const p=phone.getBoundingClientRect(),r=btn.getBoundingClientRect(),k=p.width/phone.offsetWidth;vRail.style.top=((r.top+r.height/2-p.top)/k)+'px'}
 function startVoice(src,e,btn){
@@ -1736,7 +1780,10 @@ document.addEventListener('click',e=>{
     case 'sound':openSound(d.id);break;
     case 'close-sheets':closeSheets();break;
     case 'clike':{const c=findComment(d.cid);c.liked=!c.liked;renderComments();break}
-    case 'replies':{const c=findComment(d.cid);c.open=!c.open;if(!c.replies){let h=hue(c.id);c.replies=Array.from({length:c.rep},(_,i)=>{h=(h*31+7)%991;return{id:c.id+'r'+i,u:UPOOL[h%UPOOL.length],t:RPOOL[(h+i)%RPOOL.length],time:((h%9)+1)+'h',likes:h%300,reacts:[]}})}renderComments();break}
+    case 'replies':{const c=findComment(d.cid);c.open=!c.open;ensureReplies(c);renderComments();break}
+    case 'reply':startReply(d.cid);break;
+    case 'del-comment':deleteComment(d.cid);break;
+    case 'reply-cancel':cancelReply();break;
     case 'react':{const c=findComment(d.cid);if(!c.reacts.includes(d.e))c.reacts.push(d.e);countEmoji(d.e);hideReact();renderComments();toast('Reacted '+d.e);break}
     case 'emoji':insertAtCursor(d.e);break; // counted when the comment is posted
     case 'emo-focus':$('#emoRow').scrollLeft=0;$('#cInput').focus();break;

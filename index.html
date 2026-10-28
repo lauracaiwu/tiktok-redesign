@@ -275,6 +275,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 .search img{width:14.3px;height:14.8px}
 .search input{border:0;outline:0;background:none;flex:1;font-size:15px;min-width:0}
 .search input::placeholder{color:var(--grey)}
+.dback{flex:none;width:24px;height:36px;display:grid;place-items:center;margin-right:-4px}
 .dhead{padding-bottom:10px;box-shadow:0 .33px 0 var(--line2)}
 .dsec{padding:18px 0 4px}
 .dsec h4{font-size:17px;font-weight:700;padding:0 16px;display:flex;align-items:baseline;gap:8px}
@@ -627,6 +628,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   <!-- ===== DISCOVER (redesign) ===== -->
   <section class="view" id="v-discover">
     <div class="dhead">
+      <button class="dback hidden" id="dback" data-act="d-back" aria-label="Back to Discover"><img src="assets/back-arrow.svg" width="10.21" height="18" alt=""></button>
       <label class="search"><img src="assets/search-small.svg" alt=""><input id="dq" placeholder="Search" autocomplete="off"></label>
       <button data-act="scan" aria-label="Scan"><img src="assets/scanner-icon.svg" width="18" height="18" alt=""></button>
     </div>
@@ -1091,7 +1093,7 @@ function closeAllPages(){while(stack.length)closePage()}
 let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),1800)}
 
 /* ---------- feed ---------- */
-function captionHTML(c){return esc(c).replace(/(#[\w]+)/g,'<b>$1</b>')}
+function captionHTML(c){return esc(c).replace(/(#[\w]+)/g,'<b data-act="tag" data-q="$1">$1</b>')}
 function videoHTML(v){
   const s=v.sound,stxt=`${esc(s.a)} - ${esc(s.t)}`;
   return `<div class="video" data-id="${v.id}" style="--dur:${v.dur||12}s">
@@ -1600,7 +1602,7 @@ function miniAv(u){return `<span class="mini">${avatar(u)}</span>`}
 const followBtn=u=>S.followed.has(u)?'<button class="btn-red done" disabled>Following</button>':`<button class="btn-red" data-act="follow" data-user="${u}">Follow</button>`;
 
 function renderDiscover(){
-  const b=$('#dbody'),q=dQuery.trim();let h='';
+  const b=$('#dbody'),q=dQuery.trim();let h='';$('#dback').classList.toggle('hidden',!q);
   if(q){
     const r=searchAll(q);lastResults=r.vids.map(v=>v.id);
     if(r.cs.length)h+=`<div class="dsec" style="padding-top:12px"><h4>Creators</h4>${r.cs.slice(0,3).map(u=>`<div class="ffrow"><span class="fi" style="border-radius:50%;overflow:hidden" data-act="open-creator" data-user="${u}">${avatar(u)}</span><span class="fu" data-act="open-creator" data-user="${u}"><b>${esc(CREATORS[u].name)}</b><span>@${esc(u)} · ${CREATORS[u].fans} followers</span></span>${followBtn(u)}</div>`).join('')}</div>`;
@@ -1616,6 +1618,12 @@ function renderDiscover(){
 }
 function tile(v){return `<button data-act="open-video" data-id="${v.id}"><img src="${A+v.img}" alt=""><span class="tlbl">${miniAv(v.user)}${esc(v.user)} · ♥ ${fmt(v.likes)}</span></button>`}
 function runSearch(q){dQuery=q;$('#dq').value=q;renderDiscover();$('#dbody').scrollTop=0}
+/* hashtags + trending/searches open straight into a feed of matching TikToks */
+function openTagFeed(q){
+  const r=searchAll(q),ids=r.vids.map(v=>v.id);
+  for(const u of r.cs){if(ids.length>=12)break;creatorVideos(u).forEach(v=>{if(!ids.includes(v.id))ids.push(v.id)})}
+  openViewer((ids.length?ids:recVideos().map(v=>v.id)).slice(0,12),q);
+}
 /* ---------- creator profile with playlists (Figma 10-1069) ---------- */
 const QPOOL={
   stoicism:['memento mori','the obstacle is the way','discipline is freedom','6am routine','journal with me','book notes: meditations','control what you can','amor fati','cold shower day 30'],
@@ -1774,7 +1782,8 @@ document.addEventListener('click',e=>{
     case 'scan-photos':toast('No QR code found in that photo');break;
     case 'tikcode':drawQR();$('#qrModal').classList.add('on');break;
     case 'close-modal':if(e.target===t||t.tagName==='BUTTON')$('#qrModal').classList.remove('on');break;
-    case 'search':runSearch(d.q);break;
+    case 'search':case 'tag':openTagFeed(d.q);break;
+    case 'd-back':runSearch('');$('#dq').blur();break;
     case 'fill-search':e.stopPropagation();runSearch(d.q);$('#dq').focus({preventScroll:true});break;
     case 'dismiss':S.dismissed.add(d.user);t.closest('.hcard').classList.add('gone');setTimeout(renderDiscover,300);toast('We’ll suggest fewer like this');break;
     case 'open-video':{const pool=dQuery.trim()?lastResults:recVideos().map(v=>v.id);openViewer([d.id,...pool.filter(x=>x!==d.id)].slice(0,10),dQuery.trim()?`“${dQuery.trim()}”`:'Discover');break}
